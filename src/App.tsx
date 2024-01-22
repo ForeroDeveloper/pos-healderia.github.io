@@ -227,7 +227,7 @@ function App() {
 
   const imprimir = () => {
     const payload =
-      '{"nombreImpresora":"BlueTooth Printer","serial":"66:32:FF:93:47:C0","operaciones":[{"nombre":"Iniciar","argumentos":[]},{"nombre":"EstablecerTamañoFuente","argumentos":[1,1]},{"nombre":"EstablecerEnfatizado","argumentos":[false]},{"nombre":"EstablecerAlineacion","argumentos":[1]},{"nombre":"EstablecerSubrayado","argumentos":[false]},{"nombre":"EstablecerImpresionAlReves","argumentos":[false]},{"nombre":"EstablecerImpresionBlancoYNegroInversa","argumentos":[false]},{"nombre":"EstablecerRotacionDe90Grados","argumentos":[false]},{"nombre":"EscribirTexto","argumentos":["HolA MUNDO"]},{"nombre":"Feed","argumentos":[1]}]}';
+      '{"impresora":"66:32:FF:93:47:C0","serial":"","operaciones":[{"nombre":"Iniciar","argumentos":[]},{"nombre":"EstablecerTamañoFuente","argumentos":[1,1]},{"nombre":"EstablecerEnfatizado","argumentos":[false]},{"nombre":"EstablecerAlineacion","argumentos":[1]},{"nombre":"EstablecerSubrayado","argumentos":[false]},{"nombre":"EstablecerImpresionAlReves","argumentos":[false]},{"nombre":"EstablecerImpresionBlancoYNegroInversa","argumentos":[false]},{"nombre":"EstablecerRotacionDe90Grados","argumentos":[false]},{"nombre":"EscribirTexto","argumentos":["HolA MUNDO"]},{"nombre":"Feed","argumentos":[1]}]}';
     fetch("http://localhost:8000/imprimir", {
       method: "POST",
       body: payload,
