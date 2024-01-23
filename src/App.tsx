@@ -260,14 +260,17 @@ function App() {
     const totalCalculated = calculateTotal();
     console.log(totalCalculated, productsInOrder);
 
-    // var arrayDataText = JSON.stringify({
-    //   products: [
-    //     { name: "producto1", precio: 100 },
-    //     { name: "producto2", precio: 150 },
-    //   ],
-    // });
+    let arrayDataText = JSON.stringify({
+      products: [
+        { name: "producto1", precio: 100 },
+        { name: "producto2", precio: 150 },
+      ],
+    });
 
-    window.Toaster.postMessage('Ya no llega');
+    console.log(arrayDataText)
+    console.log(`${arrayDataText}`)
+
+    window.Toaster.postMessage(`${arrayDataText}`);
 
     const printArea = printAreaRef.current;
     if (printArea) {
