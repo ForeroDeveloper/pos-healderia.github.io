@@ -20,6 +20,12 @@ import CsvUploader from "./Components/CsvUploader/CsvUploader";
 import TableInventory from "./Components/TableInventory/TableInventory";
 import { useProductContext } from "./context/ProductContext/ProductContext";
 
+declare global {
+  interface Window {
+      Toaster: any;
+  }
+}
+
 const OnScreenKeyboard = ({ onKeyPress }: any) => {
   const keyboardRows = [
     ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "Del"],
@@ -251,6 +257,10 @@ function App() {
   // };
 
   const printAndProceed = () => {
+    window.postMessage("Prueba de envio");
+    window.Toaster.postMessage('Hola desde JS');
+
+
     const printArea = printAreaRef.current;
     if (printArea) {
       const titleBefore = document.title;
@@ -260,7 +270,6 @@ function App() {
       document.body.appendChild(clonedContent);
 
       // window.print();
-      window.postMessage({products: [{name: "product 1", price: '2000', quantity: 1}]});
       // imprimir();
 
       document.title = titleBefore;
