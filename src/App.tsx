@@ -256,11 +256,16 @@ function App() {
   //     });
   // };
 
-  console.log(productsInOrder)
-
   const printAndProceed = () => {
     const totalCalculated = calculateTotal();
-    window.Toaster.postMessage({data: productsInOrder, total: totalCalculated});
+    console.log(totalCalculated, productsInOrder);
+    window.Toaster.postMessage({
+      products: [
+        { name: "producto1", precio: 100 },
+        { name: "producto2", precio: 150 },
+      ],
+      message: "Hola desde JS"
+    });
 
     const printArea = printAreaRef.current;
     if (printArea) {
