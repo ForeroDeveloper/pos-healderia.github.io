@@ -256,10 +256,11 @@ function App() {
   //     });
   // };
 
-  const printAndProceed = () => {
-    window.postMessage("Prueba de envio");
-    window.Toaster.postMessage('Hola desde JS');
+  console.log(productsInOrder)
 
+  const printAndProceed = () => {
+    const totalCalculated = calculateTotal();
+    window.Toaster.postMessage({data: productsInOrder, total: totalCalculated});
 
     const printArea = printAreaRef.current;
     if (printArea) {
