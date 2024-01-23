@@ -22,7 +22,7 @@ import { useProductContext } from "./context/ProductContext/ProductContext";
 
 declare global {
   interface Window {
-      Toaster: any;
+    Toaster: any;
   }
 }
 
@@ -259,13 +259,15 @@ function App() {
   const printAndProceed = () => {
     const totalCalculated = calculateTotal();
     console.log(totalCalculated, productsInOrder);
-    window.Toaster.postMessage({
+
+    var arrayDataText = JSON.stringify({
       products: [
         { name: "producto1", precio: 100 },
         { name: "producto2", precio: 150 },
       ],
-      message: "Hola desde JS"
     });
+
+    window.Toaster.postMessage(arrayDataText);
 
     const printArea = printAreaRef.current;
     if (printArea) {
