@@ -225,30 +225,30 @@ function App() {
   };
   const printAreaRef: MutableRefObject<HTMLDivElement | null> = useRef(null);
 
-  const imprimir = () => {
-    const payload =
-      '{"impresora":"66:32:FF:93:47:C0","serial":"","operaciones":[{"nombre":"Iniciar","argumentos":[]},{"nombre":"EstablecerTamañoFuente","argumentos":[1,1]},{"nombre":"EstablecerEnfatizado","argumentos":[false]},{"nombre":"EstablecerAlineacion","argumentos":[1]},{"nombre":"EstablecerSubrayado","argumentos":[false]},{"nombre":"EstablecerImpresionAlReves","argumentos":[false]},{"nombre":"EstablecerImpresionBlancoYNegroInversa","argumentos":[false]},{"nombre":"EstablecerRotacionDe90Grados","argumentos":[false]},{"nombre":"EscribirTexto","argumentos":["HolA MUNDO"]},{"nombre":"Feed","argumentos":[1]}]}';
-    fetch("http://localhost:8000/imprimir", {
-      method: "POST",
-      body: payload,
-    })
-      .then((respuesta) => respuesta.json())
-      .then((respuesta) => {
-        if (respuesta === true) {
-          // Éxito
-          console.log("Impreso correctamente");
-        } else {
-          // Error (el mensaje de error está en "respuesta")
-          console.log("Error con el plugin: " + respuesta);
-        }
-      })
-      .catch((e) => {
-        console.log(
-          "Error haciendo petición. Verifica que el plugin se está ejecutando. El error dice: " +
-            e
-        );
-      });
-  };
+  // const imprimir = () => {
+  //   const payload =
+  //     '{"impresora":"66:32:FF:93:47:C0","serial":"","operaciones":[{"nombre":"Iniciar","argumentos":[]},{"nombre":"EstablecerTamañoFuente","argumentos":[1,1]},{"nombre":"EstablecerEnfatizado","argumentos":[false]},{"nombre":"EstablecerAlineacion","argumentos":[1]},{"nombre":"EstablecerSubrayado","argumentos":[false]},{"nombre":"EstablecerImpresionAlReves","argumentos":[false]},{"nombre":"EstablecerImpresionBlancoYNegroInversa","argumentos":[false]},{"nombre":"EstablecerRotacionDe90Grados","argumentos":[false]},{"nombre":"EscribirTexto","argumentos":["HolA MUNDO"]},{"nombre":"Feed","argumentos":[1]}]}';
+  //   fetch("http://localhost:8000/imprimir", {
+  //     method: "POST",
+  //     body: payload,
+  //   })
+  //     .then((respuesta) => respuesta.json())
+  //     .then((respuesta) => {
+  //       if (respuesta === true) {
+  //         // Éxito
+  //         console.log("Impreso correctamente");
+  //       } else {
+  //         // Error (el mensaje de error está en "respuesta")
+  //         console.log("Error con el plugin: " + respuesta);
+  //       }
+  //     })
+  //     .catch((e) => {
+  //       console.log(
+  //         "Error haciendo petición. Verifica que el plugin se está ejecutando. El error dice: " +
+  //           e
+  //       );
+  //     });
+  // };
 
   const printAndProceed = () => {
     const printArea = printAreaRef.current;
@@ -260,7 +260,8 @@ function App() {
       document.body.appendChild(clonedContent);
 
       // window.print();
-      imprimir();
+      window.postMessage({products: [{name: "product 1", price: '2000', quantity: 1}]});
+      // imprimir();
 
       document.title = titleBefore;
       document.body.removeChild(clonedContent);
