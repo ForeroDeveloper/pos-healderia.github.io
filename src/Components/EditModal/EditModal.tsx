@@ -14,6 +14,7 @@ const EditModal = ({
   const [newPrice, setNewPrice] = useState(currentPrice);
 
   const handleUpdate = () => {
+    console.log('price', newPrice)
     if (isLoadingSave) {
       return;
     }
@@ -22,8 +23,7 @@ const EditModal = ({
 
   const handleInputChange = (e: any) => {
     const inputValue = e.target.value;
-    console.log();
-    setNewPrice(Number(inputValue.replace(/,/g, "")));
+    setNewPrice(parseFloat(inputValue.replace(/[^0-9.-]+/g,"")));
   };
 
   const handleKeyPress = (event: any) => {

@@ -1,15 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
-import {
-  collection,
-  updateDoc,
-  doc,
-  orderBy,
-  onSnapshot,
-  query,
-} from "firebase/firestore";
 // @ts-expect-error
-import { db } from "../../config/firestore.js";
+import { db, realtimeDb } from "../../config/firestore.js";
+import { ref, onValue, update } from "firebase/database";
 import EditModal from "../EditModal/EditModal.js";
 import { useProductContext } from "../../context/ProductContext/ProductContext.js";
 const TableInventory = () => {
@@ -18,7 +11,8 @@ const TableInventory = () => {
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<any>(false);
   const [keyChange, setKeyChange] = useState<any>(false);
-  const { setProductList, setCategories: setCategoriesList } = useProductContext();
+  const { setProductList, setCategories: setCategoriesList } =
+    useProductContext();
 
   const handleRowClick = (row: any, key: any) => {
     setSelectedRow(row);
@@ -27,46 +21,48 @@ const TableInventory = () => {
 
   const updateItem = async (rowId: any, newValue: any) => {
     setIsLoading(true);
-    await updateDoc(doc(db, "products", rowId), {
-      [keyChange]: newValue,
-    }).then(() => {
+    const productRef = ref(realtimeDb, `products/${rowId}`);
+    try {
       const updatedData = data.map((item) =>
         item.id === rowId ? { ...item, [keyChange]: newValue } : item
       );
+      await update(productRef, {[keyChange]: newValue});
       setProductList(updatedData as any);
       setData(updatedData);
-    });
+
+      console.log("Producto actualizado correctamente en Realtime Database", newValue);
+    } catch (error) {
+      console.error(
+        "Error al actualizar el producto en Realtime Database:",
+        error
+      );
+    }
+
     setIsLoading(false);
     setSelectedRow(null);
   };
 
-  useEffect(() => {
-    const collectionRef = collection(db, "products");
-    const q = query(collectionRef, orderBy("name", "asc"));
 
-    const unsubscribe = onSnapshot(
-      q,
+  useEffect(() => {
+    const starCountRef = ref(realtimeDb, "products/");
+    onValue(
+      starCountRef,
       (snapshot) => {
-        const newData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
+        const data = snapshot.val();
+        const productList = Object.keys(data).map((productId) => ({
+          id: productId,
+          ...data[productId],
         }));
-        setProductList(newData as any);
-        setData(newData);
         const uniqueCategories = Array.from(
-          new Set(newData.map((row: any) => row?.category))
+          new Set(productList.map((row) => row.category))
         );
         setCategories(uniqueCategories);
         setCategoriesList(uniqueCategories);
+        setProductList(productList);
+        setData(productList);
       },
-      (error) => {
-        console.error("Error fetching data from Firestore:", error);
-      }
+      { onlyOnce: true }
     );
-
-    return () => {
-      unsubscribe();
-    };
   }, []);
 
   return (

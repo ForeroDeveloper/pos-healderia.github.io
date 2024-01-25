@@ -1,27 +1,69 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import Papa from "papaparse";
-import { writeBatch, doc, collection } from "firebase/firestore";
+import {  ref, set } from "firebase/database";
+// import { writeBatch, doc, collection, ref, set } from "firebase/database";
 // @ts-expect-error
 import { v4 as uuidv4 } from 'uuid';
 
 // @ts-expect-error
-import { db } from "../../config/firestore.js";
+import { db, realtimeDb } from "../../config/firestore.js";
 const CsvUploader = () => {
   const [csvData, setCsvData] = useState(null);
 
-  const handleFileChange = (event: any) => {
-    const file = event.target.files[0];
+  // const handleFileChange = (event: any) => {
+  //   const file = event.target.files[0];
 
+  //   Papa.parse(file, {
+  //     complete: async (result: any) => {
+  //       // `result` contiene la información analizada del CSV
+  //       setCsvData(result.data);
+
+  //       try {
+  //         //   const batch = db.batch();
+  //         const batch = writeBatch(db);
+
+  //         result.data.forEach((item: any) => {
+  //           if (item.trackStock !== undefined) {
+  //             item.isStock = item.trackStock === "y";
+  //             delete item.trackStock;
+  //           }
+  //           if (typeof item.price === "string") {
+  //             item.price = parseFloat(item.price);
+  //           }
+  //           if (typeof item.cost === "string") {
+  //             item.cost = parseFloat(item.cost);
+  //           }
+  //           if (typeof item.stock === "string") {
+  //             item.stock = parseFloat(item.stock);
+  //           }
+  //           if (typeof item.flavors === "string") {
+  //             item.flavors = parseFloat(item.flavors);
+  //           }
+
+  //           const newItemRef = doc(collection(db, "products"));
+  //           batch.set(newItemRef, {...item, id: uuidv4()});
+  //         });
+
+  //         await batch.commit();
+  //         console.log("Datos registrados en Firestore");
+  //       } catch (error) {
+  //         console.error("Error al registrar en Firestore:", error);
+  //       }
+  //     },
+  //     header: true, // Supongamos que el archivo CSV tiene encabezados
+  //   });
+  // };
+
+  const handleFileChange2 = (event: any) => {
+    const file = event.target.files[0];
+  
     Papa.parse(file, {
       complete: async (result: any) => {
         // `result` contiene la información analizada del CSV
         setCsvData(result.data);
-
+  
         try {
-          //   const batch = db.batch();
-          const batch = writeBatch(db);
-
           result.data.forEach((item: any) => {
             if (item.trackStock !== undefined) {
               item.isStock = item.trackStock === "y";
@@ -39,15 +81,15 @@ const CsvUploader = () => {
             if (typeof item.flavors === "string") {
               item.flavors = parseFloat(item.flavors);
             }
-
-            const newItemRef = doc(collection(db, "products"));
-            batch.set(newItemRef, {...item, id: uuidv4()});
+  
+            const newItemKey = uuidv4();
+            const newItemRef = ref(realtimeDb, `products/${newItemKey}`);
+            set(newItemRef, { ...item, id: newItemKey });
           });
-
-          await batch.commit();
-          console.log("Datos registrados en Firestore");
+  
+          console.log("Datos registrados en Realtime Database");
         } catch (error) {
-          console.error("Error al registrar en Firestore:", error);
+          console.error("Error al registrar en Realtime Database:", error);
         }
       },
       header: true, // Supongamos que el archivo CSV tiene encabezados
@@ -59,7 +101,7 @@ const CsvUploader = () => {
       <input
         type="file"
         accept=".csv"
-        onChange={handleFileChange}
+        onChange={handleFileChange2}
         className="hidden"
         id="fileInput" // Asigna un ID para vincular con la etiqueta de la etiqueta de label
       />
@@ -83,13 +125,7 @@ const CsvUploader = () => {
         </svg>
         Subir archivo
       </label>
-
-      {csvData && (
-        <div>
-          <h2>Datos CSV:</h2>
-          <pre>{JSON.stringify(csvData, null, 2)}</pre>
-        </div>
-      )}
+      {csvData && (<><p>Se crearon los productos correctamente!</p></>)}
     </div>
   );
 };

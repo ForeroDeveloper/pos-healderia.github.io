@@ -12,6 +12,7 @@ import {
   faRightToBracket,
   faUtensils,
   faBox,
+  faIceCream,
   faMagnifyingGlass,
 } from "@fortawesome/free-solid-svg-icons";
 import Modal from "./Components/Modal/Modal";
@@ -19,7 +20,11 @@ import TableOrders from "./Components/TableOrders/TableOrders";
 import CsvUploader from "./Components/CsvUploader/CsvUploader";
 import TableInventory from "./Components/TableInventory/TableInventory";
 import { useProductContext } from "./context/ProductContext/ProductContext";
-
+// @ts-expect-error
+import { v4 as uuidv4 } from "uuid";
+import { ref, set, push, onValue, remove, update } from "firebase/database";
+// @ts-expect-error
+import { db, realtimeDb } from "../src/config/firestore.js";
 declare global {
   interface Window {
     Toaster: any;
@@ -69,19 +74,32 @@ const OnScreenKeyboard = ({ onKeyPress }: any) => {
   );
 };
 function App() {
-  const [inputValue, setInputValue] = useState("");
+  const printAreaRef: MutableRefObject<HTMLDivElement | null> = useRef(null);
+  // const [inputValue, setInputValue] = useState("");
   const [productSelected, setProductSelected] = useState<any>();
   const [valueInPayment, setValueInPayment] = useState<string>("");
+  const [address, setAddress] = useState<string>("");
+  const [phoneClient, setPhoneClient] = useState<string>("");
+  // const [valueInProduct, setValueInProduct] = useState<string>("");
   const [showKeyboard, setShowKeyboard] = useState(false);
   const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [openModalFlavors, setOpenModalFlavors] = useState(false);
   const [modalCockIsOpen, setModalCockIsOpen] = useState(false);
   const [pageView, setPageView] = useState("sales");
+  const [categorySelected, setCategorySelected] = useState<string>();
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [productsBySearch, setProductsBySearch] = useState<any[]>([]);
+  const [flavorsList, setFlavorsList] = useState<any[]>([]);
+
   const {
     productList,
     addProductOrder,
     productsInOrder,
     updateProductOrder,
     categoriesList,
+    setProductsInOrder,
+    orderSelected,
+    setFlavorsList: setFlavorsInContext,
   } = useProductContext();
 
   const [isChecked, setIsChecked] = useState(false);
@@ -91,81 +109,15 @@ function App() {
   };
 
   const openModal = () => {
+    if (orderSelected?.orderStatus == "PAID") {
+      return;
+    }
     setModalIsOpen(true);
   };
 
   const closeModal = () => {
     setModalIsOpen(false);
   };
-  const ejemploDeCarrito = [
-    {
-      id: 1,
-      name: "GASEOSA PERSONAL COLOMBIANA",
-      price: 19.99,
-      imageUrl: producto1Image,
-      quantity: 1,
-    },
-    {
-      id: 2,
-      name: "Producto 2",
-      price: 29.99,
-      imageUrl: producto1Image,
-      quantity: 2,
-    },
-    {
-      id: 3,
-      name: "Producto 3",
-      price: 14.99,
-      imageUrl: producto1Image,
-      quantity: 1,
-    },
-    {
-      id: 4,
-      name: "Producto 3",
-      price: 14.99,
-      imageUrl: producto1Image,
-      quantity: 1,
-    },
-    {
-      id: 5,
-      name: "Producto 3",
-      price: 14.99,
-      imageUrl: producto1Image,
-      quantity: 1,
-    },
-    {
-      id: 6,
-      name: "Producto 3",
-      price: 14.99,
-      imageUrl: producto1Image,
-      quantity: 1,
-    },
-    {
-      id: 7,
-      name: "Producto 3",
-      price: 14.99,
-      imageUrl: producto1Image,
-      quantity: 1,
-    },
-  ];
-
-  // const productos = [
-  //   { id: 1, nombre: "Aloha Mix", precio: 15000, imagen: producto1Image },
-  //   { id: 2, nombre: "Producto 2", precio: 20000, imagen: producto1Image },
-  //   { id: 3, nombre: "Producto 3", precio: 25000, imagen: producto1Image },
-  //   { id: 4, nombre: "Producto 3", precio: 25000, imagen: producto1Image },
-  //   { id: 5, nombre: "Producto 3", precio: 25000, imagen: producto1Image },
-  //   // Agrega más productos según sea necesario
-  // ];
-
-  // const moneys = [
-  //   { id: 1, value: 2000 },
-  //   { id: 2, value: 5000 },
-  //   { id: 3, value: 10000 },
-  //   { id: 4, value: 20000 },
-  //   { id: 5, value: 50000 },
-  //   { id: 6, value: 100000 },
-  // ];
 
   const buttonsData = [
     { id: 1, label: "1", value: 1 },
@@ -204,96 +156,76 @@ function App() {
     { id: 14, label: "", value: "no-action" },
     { id: 15, label: "<--", value: "borrar" },
   ];
-  // const categorias = [
-  //   { id: 3, label: "Preparados", value: 3 },
-  //   { id: 2, label: "Bebidas", value: 2 },
-  //   { id: 1, label: "Empaquetados", value: 1 },
-  // ];
+
   const ordersStatus = [
     { id: 3, label: "En Cocina", value: 3 },
     { id: 2, label: "Finalizadas", value: 2 },
     { id: 1, label: "Canceladas", value: 1 },
   ];
 
-  // function addCash(money: number): void {}
-
   const handleKeyPress = (key: any) => {
     if (key === "Del") {
-      setInputValue((prev) => prev.slice(0, -1));
+      setSearchTerm((prev) => prev.slice(0, -1));
     } else if (key == "Espacio") {
-      setInputValue((prev) => prev + " ");
+      setSearchTerm((prev) => prev + " ");
     } else if (key == "Enter") {
-      setInputValue("");
+      setSearchTerm("");
       setShowKeyboard(false);
     } else {
-      setInputValue((prev) => prev + key);
+      setSearchTerm((prev) => prev + key);
     }
   };
-  const printAreaRef: MutableRefObject<HTMLDivElement | null> = useRef(null);
 
-  // const imprimir = () => {
-  //   const payload =
-  //     '{"impresora":"66:32:FF:93:47:C0","serial":"","operaciones":[{"nombre":"Iniciar","argumentos":[]},{"nombre":"EstablecerTamañoFuente","argumentos":[1,1]},{"nombre":"EstablecerEnfatizado","argumentos":[false]},{"nombre":"EstablecerAlineacion","argumentos":[1]},{"nombre":"EstablecerSubrayado","argumentos":[false]},{"nombre":"EstablecerImpresionAlReves","argumentos":[false]},{"nombre":"EstablecerImpresionBlancoYNegroInversa","argumentos":[false]},{"nombre":"EstablecerRotacionDe90Grados","argumentos":[false]},{"nombre":"EscribirTexto","argumentos":["HolA MUNDO"]},{"nombre":"Feed","argumentos":[1]}]}';
-  //   fetch("http://localhost:8000/imprimir", {
-  //     method: "POST",
-  //     body: payload,
-  //   })
-  //     .then((respuesta) => respuesta.json())
-  //     .then((respuesta) => {
-  //       if (respuesta === true) {
-  //         // Éxito
-  //         console.log("Impreso correctamente");
-  //       } else {
-  //         // Error (el mensaje de error está en "respuesta")
-  //         console.log("Error con el plugin: " + respuesta);
-  //       }
-  //     })
-  //     .catch((e) => {
-  //       console.log(
-  //         "Error haciendo petición. Verifica que el plugin se está ejecutando. El error dice: " +
-  //           e
-  //       );
-  //     });
-  // };
+  const handleCreateOrder = (isPayment: boolean = false): void => {
+    const currentDate = new Date();
+    const formattedDate = `${currentDate.getDate()}-${
+      currentDate.getMonth() + 1
+    }-${currentDate.getFullYear()}`;
+    try {
+      const ordersRef = ref(realtimeDb, `orders/${formattedDate}`);
+      const newOrderRef = push(ordersRef);
+      const newOrderKEy = newOrderRef.key;
+      const newOrderToDb = {
+        id: newOrderKEy,
+        orderId: Object.keys(orderByDb).length + 1,
+        products: productsInOrder,
+        total: calculateTotal(),
+        isDelivery: isChecked,
+        orderStatus: isPayment ? "PAID" : "PENDING",
+        date: new Date().toLocaleString(undefined, { hour12: true }),
+        addressClient: address,
+        phoneClient,
+      };
+      set(newOrderRef, newOrderToDb);
+      console.log("Datos registrados en Realtime Database");
+    } catch (error) {
+      console.error("Error al registrar en Realtime Database:", error);
+    }
+  };
+
+  const handleCreateAndCleanOrder = (isPaid: boolean = false): void => {
+    handleCreateOrder(isPaid);
+    setProductsInOrder([]);
+    setProductSelected(null);
+    setModalCockIsOpen(false);
+  };
 
   const printAndProceed = () => {
     const totalCalculated = calculateTotal();
     console.log(totalCalculated, productsInOrder);
 
     let arrayDataText = JSON.stringify({
-      products: [
-        { name: "producto1", precio: 100 },
-        { name: "producto2", precio: 150 },
-      ],
+      products: productsInOrder,
+      isDelivery: isChecked,
     });
+    handleCreateAndCleanOrder();
 
-    console.log(arrayDataText)
-    console.log(`${arrayDataText}`)
+    console.log(arrayDataText);
+    console.log(`${arrayDataText}`);
 
-    window.Toaster.postMessage(`${arrayDataText}`);
-
-    const printArea = printAreaRef.current;
-    if (printArea) {
-      const titleBefore = document.title;
-      document.title = "1";
-
-      const clonedContent = printArea.cloneNode(true) as HTMLDivElement;
-      document.body.appendChild(clonedContent);
-
-      // window.print();
-      // imprimir();
-
-      document.title = titleBefore;
-      document.body.removeChild(clonedContent);
-    }
+    window?.Toaster?.postMessage(`${arrayDataText}`);
   };
 
-  // useEffect(() => {
-  //   // window.scrollTo({
-  //   //   top: document.documentElement.scrollHeight,
-  //   //   behavior: "smooth",
-  //   // });
-  // }, [pageView]);
   useEffect(() => {
     if (
       productsInOrder?.length > 0 &&
@@ -312,16 +244,154 @@ function App() {
     return total;
   };
 
-  // const handleChangeCategory = (category: string) => {
+  const handleChangeCategory = (category: string) => {
+    setCategorySelected(category);
+  };
+
+  useEffect(() => {
+    const productsFiltered = productList.filter((product) => {
+      const productNameLowerCase = product.name.toLowerCase();
+      const searchTermLowerCase = searchTerm.toLowerCase();
+
+      // Filtrar por coincidencia en el nombre
+      const nameFilter = productNameLowerCase.includes(searchTermLowerCase);
+
+      // Filtrar por categoría
+      const categoryFilter =
+        !categorySelected || product.category === categorySelected;
+
+      // Devolver true si cumple ambos filtros
+      return searchTerm.length > 0 ? nameFilter : categoryFilter;
+    });
+
+    setProductsBySearch(productsFiltered);
+  }, [searchTerm, categorySelected, productList]);
+
+  const [inputFlavors, setInputFlavors] = useState("");
+
+  const handleInputChange = (e: any) => {
+    setInputFlavors(e.target.value);
+  };
+
+  const handleSave = () => {
+    try {
+      const flavorRef = ref(realtimeDb, `flavors/`);
+      const newFlavorRef = push(flavorRef);
+      const newOrderKEy = newFlavorRef.key;
+      const newFlavor = {
+        id: newOrderKEy,
+        name: inputFlavors,
+      };
+      set(newFlavorRef, newFlavor);
+      setFlavorsList((prev) => [...prev, newFlavor]);
+      setFlavorsInContext([...flavorsList, newFlavor]);
+      setInputFlavors("");
+      console.log("Datos registrados en Realtime Database");
+    } catch (error) {
+      console.error("Error al registrar en Realtime Database:", error);
+    }
+  };
+  const handleDelete = (id: string) => {
+    try {
+      const flavorRef = ref(realtimeDb, `flavors/${id}`);
+      remove(flavorRef);
+      setFlavorsList((prev) => prev.filter((flavor) => flavor.id !== id));
+    } catch (error) {
+      console.error("Error al eliminar en Realtime Database:", error);
+    }
+  };
+
+  useEffect(() => {
+    const starCountRef = ref(realtimeDb, "flavors/");
+    onValue(
+      starCountRef,
+      (snapshot) => {
+        const data = snapshot.val();
+        const flavors = Object.keys(data).map((productId) => ({
+          id: productId,
+          ...data[productId],
+        }));
+        console.log(flavors, "sabores");
+        setFlavorsList(flavors);
+        setFlavorsInContext(flavors);
+      },
+      { onlyOnce: true }
+    );
+  }, []);
+  const [orderByDb, setOrdersByDb] = useState<any[]>([]);
+
+  useEffect(() => {
+    const currentDate = new Date();
+    const formattedDate = `${currentDate.getDate()}-${
+      currentDate.getMonth() + 1
+    }-${currentDate.getFullYear()}`;
+    const starCountRef = ref(realtimeDb, `orders/${formattedDate}`);
+    onValue(
+      starCountRef,
+      (snapshot) => {
+        const data = snapshot.val();
+        const orders = Object.keys(data).map((productId) => ({
+          id: productId,
+          ...data[productId],
+        }));
+        setOrdersByDb(orders);
+      },
+      { onlyOnce: false }
+    );
+  }, []);
+
+  const updateOrderSelected = async (id: string) => {
+    const currentDate = new Date();
+    const formattedDate = `${currentDate.getDate()}-${
+      currentDate.getMonth() + 1
+    }-${currentDate.getFullYear()}`;
+    const productRef = ref(realtimeDb, `orders/${formattedDate}/${id}`);
+    try {
+      await update(productRef, { orderStatus: "PAID" });
+
+      console.log("Producto actualizado correctamente en Realtime Database");
+    } catch (error) {
+      console.error(
+        "Error al actualizar el producto en Realtime Database:",
+        error
+      );
+    }
+  };
+
+  // const handleChageQuantityProduct = (number: any) => {
+
+  //   if (number.value === "borrar") {
+  //     setValueInProduct((prevValue) => prevValue.slice(0, -1));
+  //     return;
+  //   }
+  //   if (number.label.includes("+")) {
+  //     setValueInProduct((prevValue) => {
+  //       const newValue = Number(prevValue) + Number(number.value);
+  //       return newValue.toString();
+  //     });
+  //     return;
+  //   }
+  //   if (number.value === "no-action") {
+  //     return;
+  //   }
+  //   setValueInProduct((prevValue) => {
+  //     return prevValue + number.value.toString();
+  //   });
   // };
 
-  console.log(categoriesList);
+  // useEffect(() => {}, [productSelected]);
 
   return (
     <>
       <div className="h-screen hide-print">
         {/* {No print area} */}
         <div className="w-full bg-cyan-800 h-11 py-2 pr-1 flex justify-end">
+          <button
+            className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md mr-3"
+            onClick={() => setOpenModalFlavors(true)}
+          >
+            Sabores de Helado <FontAwesomeIcon icon={faIceCream} />
+          </button>
           <button
             className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md mr-3"
             onClick={() => setPageView("inventory")}
@@ -414,6 +484,8 @@ function App() {
                               productSelected.id,
                               productSelected
                             );
+                          } else {
+                            // handleChageQuantityProduct(number);
                           }
                         }}
                         className="bg-white text-gray p-3 hover:bg-gray-300 focus:outline-none border border-solid border-gray-500"
@@ -432,7 +504,12 @@ function App() {
           <div className="flex-1 overflow-y-auto">
             <div className="w-full bg-cyan-400 h-12 p-2 flex items-center overflow-hidden sticky top-0">
               <div className="flex w-full items-center">
-                <FontAwesomeIcon icon={faHouse} size="2x" />
+                <FontAwesomeIcon
+                  icon={faHouse}
+                  size="2x"
+                  onClick={() => handleChangeCategory("")}
+                  className="cursor-pointer"
+                />
 
                 <div className="flex w-full items-center">
                   {/* {categorias} */}
@@ -440,7 +517,7 @@ function App() {
                     {categoriesList.map((categoria, index) => (
                       <button
                         className="text-sm font-semibold ml-3 hover:bg-cyan-300 bg-none rounded truncate p-[0.3rem]"
-                        // onClick={() => handleChangeCategory(categoria)}
+                        onClick={() => handleChangeCategory(categoria)}
                         key={index + 1}
                       >
                         {categoria}
@@ -456,7 +533,7 @@ function App() {
                     </div>
                     <input
                       type="text"
-                      value={inputValue}
+                      value={searchTerm}
                       readOnly
                       onClick={() => setShowKeyboard(!showKeyboard)}
                       className="w-full mr-2 text-left bg-none px-2 focus:outline-none text-gray-800 mt-2 ml-1 truncate"
@@ -469,7 +546,7 @@ function App() {
 
             {/* {LISTA DE PRODUCTOS} */}
             <div className="grid grid-cols-4 gap-2 pb-2 text-gray-700 p-2">
-              {productList.map((producto) => (
+              {productsBySearch.map((producto) => (
                 <div
                   key={producto.id}
                   role="button"
@@ -510,8 +587,8 @@ function App() {
           } text-white`}
         >
           {/* {Contenedor de las ordenes} */}
-          <div className="flex-1">
-            <div className="w-full bg-cyan-400 h-12 p-2 flex items-center overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
+            <div className="w-full bg-cyan-400 h-12 p-2 flex items-center overflow-hidden sticky top-0">
               <div className="flex w-full items-center">
                 <FontAwesomeIcon icon={faHouse} size="2x" />
 
@@ -536,7 +613,7 @@ function App() {
                     </div>
                     <input
                       type="text"
-                      value={inputValue}
+                      value={searchTerm}
                       readOnly
                       onClick={() => setShowKeyboard(!showKeyboard)}
                       className="w-full mr-2 text-left bg-none px-2 focus:outline-none text-gray-800 mt-2 ml-1 truncate"
@@ -548,7 +625,7 @@ function App() {
             </div>
 
             {/* {LISTA DE PRODUCTOS} */}
-            <TableOrders />
+            <TableOrders orders={orderByDb} />
 
             {showKeyboard && <OnScreenKeyboard onKeyPress={handleKeyPress} />}
           </div>
@@ -556,15 +633,38 @@ function App() {
           <div className="w-2/5">
             <div className="bg-white flex flex-col h-full shadow text-blue-gray-800">
               <div className="flex-1 flex flex-col overflow-auto">
-                <div className="flex-1 w-full overflow-auto mt-1">
-                  <Cart cart={ejemploDeCarrito} />
-                </div>
+                {orderSelected ? (
+                  <div className="flex-1 w-full overflow-auto mt-1">
+                    <Cart cart={orderSelected?.products || []} />
+                  </div>
+                ) : (
+                  <div className="flex-1 w-full p-4 opacity-25 flex flex-col flex-wrap content-center justify-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-16 inline-block"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                      />
+                    </svg>
+                    <p>Seleccione Una Orden</p>
+                  </div>
+                )}
 
                 <div className="h-auto w-full text-center pb-1 px-4">
                   <div className="flex text-lg font-semibold text-blue-gray-700">
                     <div>TOTAL</div>
                     <div className="text-right w-full">
-                      ${new Intl.NumberFormat().format(calculateTotal())}
+                      $
+                      {new Intl.NumberFormat().format(
+                        calculateTotal() || orderSelected?.total || 0
+                      )}
                     </div>
                   </div>
                 </div>
@@ -574,7 +674,11 @@ function App() {
                     <div className="h-auto">
                       <button
                         className="text-white text-lg w-full h-full py-3 focus:outline-none bg-gray-500 hover:bg-cyan-600"
-                        onClick={() => setModalCockIsOpen(!modalCockIsOpen)}
+                        onClick={() => {
+                          orderSelected.orderStatus === "PAID"
+                            ? "YA SE PAGO" //TODO: NO DEJAR EDITAR
+                            : "Pagar";
+                        }}
                       >
                         Editar Orden <FontAwesomeIcon icon={faUtensils} />
                       </button>
@@ -584,7 +688,9 @@ function App() {
                         className="text-white text-lg w-full h-[80px] py-3 focus:outline-none bg-cyan-500 hover:bg-cyan-600 font-semibold"
                         onClick={openModal}
                       >
-                        Pagar
+                        {orderSelected.orderStatus === "PAID"
+                          ? "YA SE PAGO"
+                          : "Pagar"}
                       </button>
                     </div>
                   </div>
@@ -627,7 +733,10 @@ function App() {
                   <div className="w-full flex font-normal text-gray-500">
                     <span className="mr-2">Total Venta</span>
                     <span>
-                      ${new Intl.NumberFormat().format(calculateTotal())}
+                      $
+                      {new Intl.NumberFormat().format(
+                        calculateTotal() || orderSelected?.total
+                      )}
                     </span>
                   </div>
                 </div>
@@ -637,8 +746,10 @@ function App() {
                   <span className="text-blue-500">
                     $
                     {new Intl.NumberFormat().format(
-                      Number(valueInPayment) > calculateTotal()
-                        ? Number(valueInPayment) - calculateTotal()
+                      Number(valueInPayment) >
+                        (calculateTotal() || orderSelected?.total)
+                        ? Number(valueInPayment) -
+                            (calculateTotal() || orderSelected?.total)
                         : 0
                     )}
                   </span>
@@ -691,7 +802,15 @@ function App() {
               >
                 Cerrar
               </button>
-              <button className="text-white text-lg w-full h-[65px] py-3 focus:outline-none bg-green-400 hover:bg-green-500 rounded-md">
+              <button
+                className="text-white text-lg w-full h-[65px] py-3 focus:outline-none bg-green-400 hover:bg-green-500 rounded-md"
+                onClick={() => {
+                  orderSelected
+                    ? updateOrderSelected(orderSelected?.id)
+                    : handleCreateAndCleanOrder(true);
+                  setModalIsOpen(false);
+                }}
+              >
                 Confirmar
               </button>
             </div>
@@ -704,19 +823,19 @@ function App() {
           onClose={() => setModalCockIsOpen(!modalCockIsOpen)}
         >
           <div
-            className="w-96 bg-white overflow-x-auto z-10 text-gray-500 h-[80vh] "
+            className="w-96 bg-white overflow-x-auto z-10 text-gray-500 h-auto max-h-[80vh]"
             ref={printAreaRef}
             id="print-area"
           >
             <div className="text-left w-full text-sm p-4 overflow-auto">
               <div className="text-center">
-                <h2 className="text-xl font-semibold">Pedido No: 13</h2>
+                <h2 className="text-xl font-semibold">Mandar a Cocina</h2>
               </div>
               <div className="flex mt-4 text-xs">
                 <div className="flex-grow">
-                  No: <span>{"receiptNo"}</span>
+                  No. de items: {productsInOrder.length}
                 </div>
-                <div>
+                <div className="text-md">
                   {new Date().toLocaleString(undefined, { hour12: true })}
                 </div>
               </div>
@@ -731,15 +850,16 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {ejemploDeCarrito.map((item: any, index: any) => (
+                    {productsInOrder.map((item: any, index: any) => (
                       <tr key={index}>
                         <td className="py-2 text-center">{index + 1}</td>
                         <td className="py-2 text-left">
                           <span>{item.name}</span>
                           <br />
-                          <small>Nota: Sin queso, adicionar galleta</small>
-                          <br />
-                          <small>Sabores: Chocolate, Mandarina</small>
+                          {item?.note && <small>Nota: {item.note}</small>}
+
+                          {/* <br />
+                          <small>Sabores: Chocolate, Mandarina</small> */}
                         </td>
                         <td className="py-2 text-center">{item.quantity}</td>
                       </tr>
@@ -750,10 +870,7 @@ function App() {
               <hr className="my-2" />
             </div>
             <div className="p-4 w-full hide-print">
-              <div className="items-center mb-6 ml-2 justify-end flex">
-                <label htmlFor="exampleCheckbox" className="mr-2 text-gray-700">
-                  Es un Domicilio?
-                </label>
+              <div className="items-center mb-4 ml-2 justify-center flex cursor-pointer">
                 <input
                   type="checkbox"
                   id="exampleCheckbox"
@@ -761,13 +878,102 @@ function App() {
                   checked={isChecked}
                   onChange={handleCheckboxChange}
                 />
+                <label
+                  htmlFor="exampleCheckbox"
+                  className="ml-2 text-gray-700 font-medium cursor-pointer"
+                >
+                  Es un Domicilio?
+                </label>
               </div>
+              {isChecked && (
+                <div className="mb-4">
+                  <span className="text-sm font-normal flex justify-left ml-2">
+                    Direccion:
+                  </span>
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    autoComplete="off"
+                    className="w-full h-10 mr-2 text-left bg-none px-2 focus:outline-gray-800 text-gray-800 mt-2 ml-1 border border-gray-500 rounded-md"
+                    placeholder="Ingresa la direccion del cliente..."
+                  />
+                  <span className="text-sm font-normal flex justify-left ml-2 mt-2">
+                    Celular:
+                  </span>
+                  <input
+                    type="text"
+                    value={phoneClient}
+                    onChange={(e) => setPhoneClient(e.target.value)}
+                    autoComplete="off"
+                    className="w-full h-10 mr-2 text-left bg-none px-2 focus:outline-gray-800 text-gray-800 mt-2 ml-1 border border-gray-500 rounded-md"
+                    placeholder="Para llamar al cliente..."
+                  />
+                </div>
+              )}
               <button
                 className="bg-cyan-500 text-white text-lg px-4 py-3 rounded-2xl w-full focus:outline-none"
                 onClick={() => printAndProceed()}
               >
                 IMPRIMIR
               </button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* {Sabores de Helado Modal} */}
+        <Modal
+          isOpen={openModalFlavors}
+          onClose={() => setOpenModalFlavors(!openModalFlavors)}
+        >
+          <div
+            className="w-96 bg-white overflow-x-auto z-10 text-gray-500 h-auto max-h-[80vh]"
+            ref={printAreaRef}
+            id="print-area"
+          >
+            <div className="bg-white p-6 rounded-md shadow-md w-96">
+              <h2 className="text-2xl font-bold mb-4">Sabores Disponibles</h2>
+              <div className="flex justify-between h-10 mb-5">
+                <input
+                  type="text"
+                  value={inputFlavors}
+                  onChange={handleInputChange}
+                  className="w-full h-10 px-2 mb-4 border border-gray-300 rounded-md"
+                  placeholder="Ingrese el sabor disponible"
+                />
+                <button
+                  onClick={handleSave}
+                  className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 ml-2"
+                >
+                  Agregar
+                </button>
+              </div>
+
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="text-left">Sabor</th>
+                    <th className="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {flavorsList.map((flavor, index) => (
+                    <tr key={index}>
+                      <td className="border-b border-gray-300 py-2 text-left">
+                        {flavor.name}
+                      </td>
+                      <td className="border-b border-gray-300 py-2 text-right">
+                        <button
+                          onClick={() => handleDelete(flavor.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </Modal>

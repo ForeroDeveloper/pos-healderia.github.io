@@ -10,16 +10,25 @@ import React, { createContext, useContext, useState, ReactNode } from "react";
 
 interface ProductContextProps {
   productList: any[];
+  flavorsList: any[];
   categoriesList: any[];
   productsInOrder: any[];
+  orderSelected: any;
   addProduct: (newProduct: any) => void;
   addProductOrder: (newProduct: any) => void;
   removeProduct: (productId: number) => void;
   removeProductOrder: (productId: number) => void;
   updateProduct: (productId: number, updatedProduct: any) => void;
-  updateProductOrder: (productId: number, updatedProduct: any) => void;
+  updateProductOrder: (
+    productId: number,
+    updatedProduct: any,
+    isDelete?: boolean
+  ) => void;
   setProductList: (newProductList: any[]) => void;
+  setProductsInOrder: (newProductList: any[]) => void;
+  setFlavorsList: (newProductList: any[]) => void;
   setCategories: (categories: any[]) => void;
+  setOrderSelected: (categories: any[]) => void;
 }
 
 const ProductContext = createContext<ProductContextProps | undefined>(
@@ -42,8 +51,10 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
   children,
 }) => {
   const [productList, setProductList] = useState<any[]>([]);
+  const [flavorsList, setFlavorsList] = useState<any[]>([]);
   const [categoriesList, setCategories] = useState<any[]>([]);
   const [productsInOrder, setProductsInOrder] = useState<any[]>([]);
+  const [orderSelected, setOrderSelected] = useState<any>(null);
 
   const addProduct = (newProduct: any) => {
     setProductList((prevList) => [...prevList, newProduct]);
@@ -91,27 +102,38 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
     );
   };
 
-  const updateProductOrder = (productId: number, updatedProduct: any) => {
+  const updateProductOrder = (
+    productId: number,
+    updatedProduct: any,
+    isDelete: boolean = true
+  ) => {
     setProductsInOrder((prevList) =>
       prevList
         .map((product) =>
           product.id === productId
             ? {
                 ...updatedProduct,
-                quantity: Math.max(0, product.quantity - 1),
+                quantity: isDelete
+                  ? Math.max(0, product.quantity - 1)
+                  : product.quantity,
               }
             : product
         )
         .filter((product) => product.quantity > 0)
     );
   };
-  
 
   const setProductListHandler = (newProductList: any[]) => {
     setProductList(newProductList);
   };
   const setCategoriesListHandler = (newProductList: any[]) => {
     setCategories(newProductList);
+  };
+  const setFlavorsListHandler = (flavorsByDB: any[]) => {
+    setFlavorsList(flavorsByDB);
+  };
+  const setOrderSelectedHandler = (order: any) => {
+    setOrderSelected(order);
   };
 
   const value: ProductContextProps = {
@@ -126,6 +148,11 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
     categoriesList,
     setCategories: setCategoriesListHandler,
     setProductList: setProductListHandler,
+    setProductsInOrder,
+    flavorsList,
+    setFlavorsList: setFlavorsListHandler,
+    orderSelected,
+    setOrderSelected: setOrderSelectedHandler,
   };
 
   return (

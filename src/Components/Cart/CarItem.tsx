@@ -1,0 +1,153 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useEffect, useRef, useState } from "react";
+import { faNoteSticky } from "@fortawesome/free-solid-svg-icons";
+import { useProductContext } from "../../context/ProductContext/ProductContext";
+const CarItem = ({ item, productSelected }: any) => {
+  const selectedProductRef = useRef<any>(null);
+  const [openModal, setOpenModal] = useState<boolean>(false);
+  const [noteTexts, setNoteTexts] = useState(
+    Array.from({ length: item?.quantity }, () => "")
+  );
+  const { updateProductOrder, flavorsList } = useProductContext();
+
+  const handleNoteChange = (index: any, value: string) => {
+    const newNoteTexts = [...noteTexts];
+    newNoteTexts[index] = value;
+    setNoteTexts(newNoteTexts);
+  };
+
+  const formatterNotes = (): string => {
+    console.log(item.note, noteTexts)
+    return noteTexts.length > 1 ? noteTexts.map((text, index) => `${index + 1}: ${text}`).join("| ") : item?.note;
+  };
+
+  useEffect(() => {
+    if (selectedProductRef.current) {
+      selectedProductRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [productSelected]);
+
+  return (
+    <div key={item.id}>
+      <div
+        key={item.id}
+        ref={productSelected?.id === item?.id ? selectedProductRef : null}
+        className={`mb-0 border-t-2 ${
+          productSelected?.id === item?.id ? "bg-green-100" : "bg-blue-gray-50"
+        } w-full text-blue-gray-700 py-2 px-2 flex flex-col text-left`}
+      >
+        <div className="flex-grow flex justify-between">
+          <div>
+            <h5 className="text-sm text-left whitespace-normal font-semibold">
+              {item?.name}
+            </h5>
+            <h5 className="text-sm text-left whitespace-normal ml-2">
+              <b>{item?.quantity}</b> Unidades x ${" "}
+              {new Intl.NumberFormat().format(item?.price)} / Unidad
+            </h5>
+          </div>
+          <div>
+            <FontAwesomeIcon
+              icon={faNoteSticky}
+              fontSize={20}
+              className="cursor-pointer mt-2"
+              onClick={() => setOpenModal(true)}
+            />
+          </div>
+          <p className="text-sm text-right block font-bold">
+            $ {new Intl.NumberFormat().format(item?.price * item?.quantity)}
+          </p>
+        </div>
+        {item?.note && (
+          <div className="flex">
+            <p className="text-black font-semibold text-sm ml-2">Nota: </p>
+            <p className="text-gra-400 font-normal text-sm ml-2">
+              {formatterNotes()}
+            </p>
+          </div>
+        )}
+      </div>
+      <div
+        className={`fixed inset-0 z-50 flex items-center justify-center ${
+          openModal ? "" : "hidden"
+        }`}
+      >
+        <div
+          className="absolute inset-0 bg-gray-800 opacity-50"
+          onClick={() => {
+            setOpenModal(!openModal);
+            updateProductOrder(
+              item.id,
+              { ...item, note: formatterNotes() },
+              false
+            );
+          }}
+        ></div>
+        <div className="bg-white p-8 rounded shadow-lg z-10 w-[400px]">
+          <h2 className="text-lg font-semibold mb-0">Agregar Nota</h2>
+          <span className="text-sm font-normal mb-2 flex justify-center">
+            Producto: <p className="font-semibold ml-1">{item?.name}</p>
+          </span>
+
+          {Array.from({ length: item?.quantity }, (_, index) => (
+            <>
+              <span className="text-sm font-normal flex justify-left ml-2 mt-2">
+                Sabores del producto: {index + 1}
+              </span>
+              <input
+                type="text"
+                key={index}
+                value={noteTexts[index]}
+                onChange={(e) => handleNoteChange(index, e.target.value)}
+                autoComplete="off"
+                className="w-full h-10 mr-2 text-left bg-none px-2 focus:outline-gray-800 text-gray-800 mt-2 ml-1 border border-gray-500 rounded-md"
+                placeholder="Nota..."
+              />
+              <div className="overflow-auto whitespace-nowrap mt-2 custom-scrollbar">
+                {flavorsList.map((flavor) => (
+                  <span
+                    key={flavor.id}
+                    className="inline-block bg-blue-500 text-white px-2 py-0 rounded-full cursor-pointer hover:bg-blue-600 text-sm mr-1"
+                    onClick={() =>
+                      handleNoteChange(
+                        index,
+                        noteTexts[index] + flavor.name + ", "
+                      )
+                    }
+                  >
+                    {flavor.name}
+                  </span>
+                ))}
+              </div>
+            </>
+          ))}
+
+          <div className="flex justify-end mt-4 ">
+            <button className="mr-2" onClick={() => setOpenModal(false)}>
+              Cancelar
+            </button>
+            <button
+              className=" bg-cyan-300 text-white p-1 rounded-md font-semibold px-2"
+              onClick={() => {
+                updateProductOrder(
+                  item.id,
+                  { ...item, note: formatterNotes() },
+                  false
+                );
+                setOpenModal(false);
+              }}
+            >
+              Guardar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CarItem;
