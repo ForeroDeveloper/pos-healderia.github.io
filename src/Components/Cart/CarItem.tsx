@@ -6,26 +6,49 @@ import { useProductContext } from "../../context/ProductContext/ProductContext";
 const CarItem = ({ item, productSelected, isCreated }: any) => {
   const selectedProductRef = useRef<any>(null);
   const [openModal, setOpenModal] = useState<boolean>(false);
-  const [isChanged, setIsChangedNote] = useState<boolean>(false);
   const [noteTexts, setNoteTexts] = useState(
     Array.from({ length: item?.quantity || 0 }, () => "")
   );
-  const { updateProductOrder, flavorsList, orderSelected } =
+  const { updateProductOrder, flavorsList } =
     useProductContext();
 
   const handleNoteChange = (index: any, value: string) => {
     const newNoteTexts = [...noteTexts];
-    newNoteTexts[index] = value;
+    newNoteTexts[index] = value.replace(/^undefined/, "");
     setNoteTexts(newNoteTexts);
   };
 
-  const formatterNotes = (): string => {
-    return orderSelected && !isChanged
-      ? item?.note
-      : noteTexts
-          .map((text, index) => `${index + 1}: ${text}`)
-          .join("| ")
-          .replace(/^\d+: /, "");
+  const formatterNotes = (): any[] => {
+    const notesObjects: any = [];
+
+    noteTexts.forEach((note, index) => {
+      note = note.trim().replace(/,\s*$/, "");
+
+      const noteObject = {
+        id: index + 1,
+        note: note,
+      };
+
+      notesObjects.push(noteObject);
+    });
+
+    console.log(notesObjects, "notas");
+
+    return notesObjects;
+
+    // if (orderSelected) {
+    //   return noteTexts
+    //     ? noteTexts
+    //         .map((text, index) => `${index + 1}: ${text}`)
+    //         .join("| ")
+    //         .replace(/^\d+: /, "")
+    //     : "";
+    // }
+
+    // return noteTexts
+    //   .map((text, index) => `${index + 1}: ${text}`)
+    //   .join("| ")
+    //   .replace(/^\d+: /, "");
   };
 
   useEffect(() => {
@@ -37,21 +60,31 @@ const CarItem = ({ item, productSelected, isCreated }: any) => {
     }
   }, [productSelected]);
 
-  const handleNoteChangeWithDb = (index: any, value: string) => {
-    setIsChangedNote(true);
-    console.log(index, value);
-    const newNoteTexts = [...noteTexts];
-    newNoteTexts[index] = value;
-    setNoteTexts(newNoteTexts);
+  // const handleNoteChangeWithDb = (index: any, value: string) => {
+  //   setIsChangedNote(true);
+  //   console.log(index, value);
+  //   const newNoteTexts = [...noteTexts];
+  //   newNoteTexts[index] = value.replace(/^undefined/, "");
+  //   setNoteTexts(newNoteTexts);
+  // };
+
+  useEffect(() => {
+    // if (item && false) {
+    //   const noteByProduct = item?.note.split(" | ");
+    //   setNoteTexts(noteByProduct);
+    // }
+    if (item && Array.isArray(item.notes)) {
+      const newArrayText = item?.notes?.map((item: any) => item.note + ", ");
+      setNoteTexts(newArrayText);
+    }
+  }, [item]);
+
+  const handleValueInput = (index: any) => {
+    return noteTexts[index];
   };
 
-  // useEffect(() => {
-  //   if (orderSelected) {
-  //     const newNoteTexts = [...noteTexts];
-  //     newNoteTexts[index] = item?.note;
-  //     setNoteTexts(newNoteTexts);
-  //   }
-  // }, [orderSelected]);
+  console.log("noteTExts", noteTexts);
+
 
   return (
     <div key={item.id}>
@@ -86,14 +119,28 @@ const CarItem = ({ item, productSelected, isCreated }: any) => {
             $ {new Intl.NumberFormat().format(item?.price * item?.quantity)}
           </p>
         </div>
-        {item?.note && (
+
+        {noteTexts.length > 0 && noteTexts[0] !== '' ? (
+          <div className="flex">
+            <p className="text-black font-semibold text-sm ml-2">Nota: </p>
+            <p className="text-gra-400 font-normal text-sm ml-2">
+              {noteTexts?.map((note: any, _index) => (
+                <span key={_index}>
+                  <span className="font-bold">{_index + 1}:</span> {note}
+                </span>
+              ))}
+            </p>
+          </div>
+        ) : null}
+
+        {/* {item?.note && (
           <div className="flex">
             <p className="text-black font-semibold text-sm ml-2">Nota: </p>
             <p className="text-gra-400 font-normal text-sm ml-2">
               {formatterNotes()}
             </p>
           </div>
-        )}
+        )} */}
       </div>
       <div
         className={`fixed inset-0 z-50 flex items-center justify-center ${
@@ -106,7 +153,7 @@ const CarItem = ({ item, productSelected, isCreated }: any) => {
             setOpenModal(!openModal);
             updateProductOrder(
               item.id,
-              { ...item, note: formatterNotes() },
+              { ...item, notes: { ...formatterNotes() } },
               false
             );
           }}
@@ -125,11 +172,7 @@ const CarItem = ({ item, productSelected, isCreated }: any) => {
               <input
                 type="text"
                 key={index}
-                value={
-                  orderSelected && !isChanged
-                    ? (noteTexts[index] = item?.note)
-                    : noteTexts[index]
-                }
+                value={handleValueInput(index)}
                 onChange={(e) => handleNoteChange(index, e.target.value)}
                 autoComplete="off"
                 className="w-full h-10 mr-2 text-left bg-none px-2 focus:outline-gray-800 text-gray-800 mt-2 ml-1 border border-gray-500 rounded-md"
@@ -141,17 +184,18 @@ const CarItem = ({ item, productSelected, isCreated }: any) => {
                     key={flavor.id}
                     className="inline-block bg-blue-500 text-white px-2 py-0 rounded-full cursor-pointer hover:bg-blue-600 text-sm mr-1"
                     onClick={() => {
-                      if (orderSelected) {
-                        handleNoteChangeWithDb(
-                          index,
-                          noteTexts[index] + flavor.name + ", "
-                        );
-                        return;
-                      }
+                      // console.log("flavor", flavor?.name, !!orderSelected);
+                      // if (!!orderSelected) {
+                      //   handleNoteChangeWithDb(
+                      //     index,
+                      //     (noteTexts[index] =
+                      //       noteTexts[index] + flavor?.name + ", ")
+                      //   );
+                      //   return;
+                      // }
                       handleNoteChange(
                         index,
-                        (noteTexts[index] =
-                          item?.note + noteTexts[index] + flavor.name + ", ")
+                        noteTexts[index] + flavor?.name + ", "
                       );
                     }}
                   >
@@ -171,7 +215,7 @@ const CarItem = ({ item, productSelected, isCreated }: any) => {
               onClick={() => {
                 updateProductOrder(
                   item.id,
-                  { ...item, note: formatterNotes() },
+                  { ...item, notes: { ...formatterNotes() } },
                   false
                 );
                 setOpenModal(false);

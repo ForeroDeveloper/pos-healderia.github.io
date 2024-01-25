@@ -13,6 +13,8 @@ import {
   faBox,
   faIceCream,
   faMagnifyingGlass,
+  faMoneyBill,
+  faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import Modal from "./Components/Modal/Modal";
 import TableOrders from "./Components/TableOrders/TableOrders";
@@ -185,6 +187,9 @@ function App() {
       currentDate.getMonth() + 1
     }-${currentDate.getFullYear()}`;
     try {
+
+      console.log('productsInOrder', productsInOrder)
+
       const ordersRef = ref(realtimeDb, `orders/${formattedDate}`);
       const newOrderRef = push(ordersRef);
       const newOrderKEy = newOrderRef.key;
@@ -303,6 +308,18 @@ function App() {
       console.error("Error al eliminar en Realtime Database:", error);
     }
   };
+  const handleDeleteOrder = (id: string) => {
+    const currentDate = new Date();
+    const formattedDate = `${currentDate.getDate()}-${
+      currentDate.getMonth() + 1
+    }-${currentDate.getFullYear()}`;
+    try {
+      const flavorRef = ref(realtimeDb, `orders/${formattedDate}/${id}`);
+      remove(flavorRef);
+    } catch (error) {
+      console.error("Error al eliminar en Realtime Database:", error);
+    }
+  };
 
   useEffect(() => {
     const starCountRef = ref(realtimeDb, "flavors/");
@@ -343,7 +360,14 @@ function App() {
     );
   }, []);
 
-  const updateOrderSelected = async () => {
+  const calculateTotalUpdate = (productsMap: any[]) => {
+    const total = productsMap.reduce((acumulador, producto) => {
+      return acumulador + producto.price * producto.quantity;
+    }, 0);
+    return total;
+  };
+
+  const updateOrderSelected = async (isPaid: boolean = true) => {
     const currentDate = new Date();
     const formattedDate = `${currentDate.getDate()}-${
       currentDate.getMonth() + 1
@@ -353,14 +377,19 @@ function App() {
       `orders/${formattedDate}/${orderSelected?.id}`
     );
     try {
-      if (productsInOrder?.length) {
+      const productsMap = productsInOrder?.length
+        ? productsInOrder
+        : orderSelected?.products;
+
+      if (productsInOrder?.length || orderSelected?.products) {
         await update(productRef, {
-          products: productsInOrder.map((product) => ({
+          products: productsMap.map((product: any) => ({
             ...product,
             quantity: product?.quantity,
-            initialQuantity: product?.quantity, 
+            initialQuantity: product?.quantity,
           })),
-          total: calculateTotal()
+          orderStatus: isPaid ? "PAID" : "PENDING",
+          total: calculateTotalUpdate(productsMap)
         });
       } else {
         await remove(productRef);
@@ -482,10 +511,25 @@ function App() {
                   <div className="flex flex-col h-full w-2/5">
                     <div className="h-auto">
                       <button
-                        className="text-white text-lg w-full h-full py-3 focus:outline-none bg-gray-500 hover:bg-cyan-600"
+                        className="text-white text-lg w-full h-full py-3 focus:outline-none bg-gray-500 hover:bg-gray-600"
                         onClick={() => setModalCockIsOpen(!modalCockIsOpen)}
                       >
                         M. Cocina <FontAwesomeIcon icon={faUtensils} />
+                      </button>
+                    </div>
+                    <div className="h-auto">
+                      <button
+                        className="text-gray text-lg w-full h-full py-3 focus:outline-none bg-yellow-300 hover:bg-yellow-400"
+                        onClick={() => {
+                          if (productsInOrder?.length && !orderSelected) {
+                            handleCreateAndCleanOrder();
+                          } else {
+                            updateOrderSelected(false); //TODO: cuadno es uan orden creda anterioirmente
+                          }
+                        }}
+                      >
+                        Pendiente
+                        <FontAwesomeIcon icon={faMoneyBill} color="black" className="ml-2" />
                       </button>
                     </div>
                     <div className="flex-grow">
@@ -659,7 +703,10 @@ function App() {
               <div className="flex-1 flex flex-col overflow-auto">
                 {orderSelected ? (
                   <div className="flex-1 w-full overflow-auto">
-                    <Cart cart={orderSelected?.products || []} isCreated={true} />
+                    <Cart
+                      cart={orderSelected?.products || []}
+                      isCreated={true}
+                    />
                   </div>
                 ) : (
                   <div className="flex-1 w-full p-4 opacity-25 flex flex-col flex-wrap content-center justify-center">
@@ -695,27 +742,42 @@ function App() {
 
                 <div className="flex">
                   <div className="flex flex-col h-full w-full">
-                    <div className="h-auto">
-                      <button
-                        className="text-white text-lg w-full h-full py-3 focus:outline-none bg-gray-500 hover:bg-cyan-600"
-                        onClick={() => {
-                          if (orderSelected?.orderStatus === "PAID") {
-                            return;
-                          }
-                          setProductsInOrderByDbHandler(
-                            orderSelected?.products
-                          );
-                          setIsEditOrder(true);
-                          setPageView("sales");
-                        }}
-                      >
-                        Editar Orden <FontAwesomeIcon icon={faUtensils} />
-                      </button>
-                    </div>
+                    {orderSelected && (
+                      <div className="h-auto justify-between flex">
+                        <button
+                          className="text-white text-lg w-full h-full py-3 focus:outline-none bg-gray-500 hover:bg-gray-600"
+                          onClick={() => {
+                            if (orderSelected?.orderStatus === "PAID") {
+                              return;
+                            }
+                            setProductsInOrderByDbHandler(
+                              orderSelected?.products
+                            );
+                            setIsEditOrder(true);
+                            setPageView("sales");
+                          }}
+                        >
+                          Editar Orden <FontAwesomeIcon icon={faUtensils} />
+                        </button>
+                        <button
+                          className="text-white text-lg w-full h-full py-3 focus:outline-none bg-red-500 hover:bg-red-600"
+                          onClick={() => {
+                            handleDeleteOrder(orderSelected?.id);
+                          }}
+                        >
+                          Eliminar <FontAwesomeIcon icon={faTrash} />
+                        </button>
+                      </div>
+                    )}
                     <div className="flex-grow">
                       <button
                         className="text-white text-lg w-full h-[80px] py-3 focus:outline-none bg-cyan-500 hover:bg-cyan-600 font-semibold"
-                        onClick={openModal}
+                        onClick={() => {
+                          if (!orderSelected) {
+                            return;
+                          }
+                          openModal();
+                        }}
                       >
                         {orderSelected?.orderStatus === "PAID"
                           ? "YA SE PAGO"
@@ -834,9 +896,12 @@ function App() {
               <button
                 className="text-white text-lg w-full h-[65px] py-3 focus:outline-none bg-green-400 hover:bg-green-500 rounded-md"
                 onClick={() => {
-                  orderSelected
-                    ? updateOrderSelected()
-                    : handleCreateAndCleanOrder(true);
+                  if (orderSelected) {
+                    updateOrderSelected();
+                    setModalIsOpen(false);
+                    return;
+                  }
+                  handleCreateAndCleanOrder(true);
                   setModalIsOpen(false);
                 }}
               >

@@ -71,8 +71,8 @@ const TableOrders = ({ orders }: any) => {
           <h2 className="text-xl font-semibold">Info. Orden</h2>
         </div>
         <div className="p-2 text-xl">
-          <h2>Direccion: {infoOrder?.addressClient}</h2>
-          <h2>Número: {infoOrder?.phoneClient}</h2>
+          <h2 className="flex">Dirección: <p className="ml-2 font-semibold">{infoOrder?.addressClient}</p></h2>
+          <h2 className="flex">Número: <p className="ml-2 font-semibold">{infoOrder?.phoneClient}</p></h2>
         </div>
       </Modal>
     </div>
