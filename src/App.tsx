@@ -3,7 +3,6 @@
 import { MutableRefObject, useEffect, useRef, useState } from "react";
 import "./App.css";
 import Cart from "./Components/Cart/Cart";
-import producto1Image from "./assets/food-example/food1.png";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCartShopping,
