@@ -3,13 +3,15 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useRef, useState } from "react";
 import { faNoteSticky } from "@fortawesome/free-solid-svg-icons";
 import { useProductContext } from "../../context/ProductContext/ProductContext";
-const CarItem = ({ item, productSelected }: any) => {
+const CarItem = ({ item, productSelected, isCreated }: any) => {
   const selectedProductRef = useRef<any>(null);
   const [openModal, setOpenModal] = useState<boolean>(false);
+  const [isChanged, setIsChangedNote] = useState<boolean>(false);
   const [noteTexts, setNoteTexts] = useState(
-    Array.from({ length: item?.quantity }, () => "")
+    Array.from({ length: item?.quantity || 0 }, () => "")
   );
-  const { updateProductOrder, flavorsList } = useProductContext();
+  const { updateProductOrder, flavorsList, orderSelected } =
+    useProductContext();
 
   const handleNoteChange = (index: any, value: string) => {
     const newNoteTexts = [...noteTexts];
@@ -18,8 +20,12 @@ const CarItem = ({ item, productSelected }: any) => {
   };
 
   const formatterNotes = (): string => {
-    console.log(item.note, noteTexts)
-    return noteTexts.length > 1 ? noteTexts.map((text, index) => `${index + 1}: ${text}`).join("| ") : item?.note;
+    return orderSelected && !isChanged
+      ? item?.note
+      : noteTexts
+          .map((text, index) => `${index + 1}: ${text}`)
+          .join("| ")
+          .replace(/^\d+: /, "");
   };
 
   useEffect(() => {
@@ -30,6 +36,22 @@ const CarItem = ({ item, productSelected }: any) => {
       });
     }
   }, [productSelected]);
+
+  const handleNoteChangeWithDb = (index: any, value: string) => {
+    setIsChangedNote(true);
+    console.log(index, value);
+    const newNoteTexts = [...noteTexts];
+    newNoteTexts[index] = value;
+    setNoteTexts(newNoteTexts);
+  };
+
+  // useEffect(() => {
+  //   if (orderSelected) {
+  //     const newNoteTexts = [...noteTexts];
+  //     newNoteTexts[index] = item?.note;
+  //     setNoteTexts(newNoteTexts);
+  //   }
+  // }, [orderSelected]);
 
   return (
     <div key={item.id}>
@@ -51,12 +73,14 @@ const CarItem = ({ item, productSelected }: any) => {
             </h5>
           </div>
           <div>
-            <FontAwesomeIcon
-              icon={faNoteSticky}
-              fontSize={20}
-              className="cursor-pointer mt-2"
-              onClick={() => setOpenModal(true)}
-            />
+            {!isCreated && (
+              <FontAwesomeIcon
+                icon={faNoteSticky}
+                fontSize={20}
+                className="cursor-pointer mt-2"
+                onClick={() => setOpenModal(true)}
+              />
+            )}
           </div>
           <p className="text-sm text-right block font-bold">
             $ {new Intl.NumberFormat().format(item?.price * item?.quantity)}
@@ -101,7 +125,11 @@ const CarItem = ({ item, productSelected }: any) => {
               <input
                 type="text"
                 key={index}
-                value={noteTexts[index]}
+                value={
+                  orderSelected && !isChanged
+                    ? (noteTexts[index] = item?.note)
+                    : noteTexts[index]
+                }
                 onChange={(e) => handleNoteChange(index, e.target.value)}
                 autoComplete="off"
                 className="w-full h-10 mr-2 text-left bg-none px-2 focus:outline-gray-800 text-gray-800 mt-2 ml-1 border border-gray-500 rounded-md"
@@ -112,12 +140,20 @@ const CarItem = ({ item, productSelected }: any) => {
                   <span
                     key={flavor.id}
                     className="inline-block bg-blue-500 text-white px-2 py-0 rounded-full cursor-pointer hover:bg-blue-600 text-sm mr-1"
-                    onClick={() =>
+                    onClick={() => {
+                      if (orderSelected) {
+                        handleNoteChangeWithDb(
+                          index,
+                          noteTexts[index] + flavor.name + ", "
+                        );
+                        return;
+                      }
                       handleNoteChange(
                         index,
-                        noteTexts[index] + flavor.name + ", "
-                      )
-                    }
+                        (noteTexts[index] =
+                          item?.note + noteTexts[index] + flavor.name + ", ")
+                      );
+                    }}
                   >
                     {flavor.name}
                   </span>

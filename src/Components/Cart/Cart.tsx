@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import CarItem from "./CarItem";
-const Cart = ({ cart, productSelected }: any) => {
+const Cart = ({ cart, productSelected, isCreated }: any) => {
 
   return (
     <>
       {cart.map((item: any) => (
-          <CarItem productSelected={productSelected} item={item} key={item.id}/>
+          <CarItem productSelected={productSelected} item={item} key={item.id} isCreated={isCreated}/>
       ))}
     </>
   );

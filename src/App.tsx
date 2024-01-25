@@ -99,6 +99,10 @@ function App() {
     categoriesList,
     setProductsInOrder,
     orderSelected,
+    setOrderSelected,
+    setIsEditOrder,
+    isEditOrder,
+    setProductsInOrderByDbHandler,
     setFlavorsList: setFlavorsInContext,
   } = useProductContext();
 
@@ -188,7 +192,10 @@ function App() {
       const newOrderToDb = {
         id: newOrderKEy,
         orderId: Object.keys(orderByDb).length + 1,
-        products: productsInOrder,
+        products: productsInOrder.map((product) => ({
+          ...product,
+          initialQuantity: product.quantity,
+        })),
         total: calculateTotal(),
         isDelivery: isChecked,
         orderStatus: isPayment ? "PAID" : "PENDING",
@@ -253,14 +260,11 @@ function App() {
       const productNameLowerCase = product.name.toLowerCase();
       const searchTermLowerCase = searchTerm.toLowerCase();
 
-      // Filtrar por coincidencia en el nombre
       const nameFilter = productNameLowerCase.includes(searchTermLowerCase);
 
-      // Filtrar por categoría
       const categoryFilter =
         !categorySelected || product.category === categorySelected;
 
-      // Devolver true si cumple ambos filtros
       return searchTerm.length > 0 ? nameFilter : categoryFilter;
     });
 
@@ -340,14 +344,32 @@ function App() {
     );
   }, []);
 
-  const updateOrderSelected = async (id: string) => {
+  const updateOrderSelected = async () => {
     const currentDate = new Date();
     const formattedDate = `${currentDate.getDate()}-${
       currentDate.getMonth() + 1
     }-${currentDate.getFullYear()}`;
-    const productRef = ref(realtimeDb, `orders/${formattedDate}/${id}`);
+    const productRef = ref(
+      realtimeDb,
+      `orders/${formattedDate}/${orderSelected?.id}`
+    );
     try {
-      await update(productRef, { orderStatus: "PAID" });
+      if (productsInOrder?.length) {
+        await update(productRef, {
+          products: productsInOrder.map((product) => ({
+            ...product,
+            quantity: product?.quantity,
+            initialQuantity: product?.quantity, 
+          })),
+          total: calculateTotal()
+        });
+      } else {
+        await remove(productRef);
+      }
+      setProductsInOrder([]);
+      setOrderSelected(null);
+      setProductSelected(null);
+      setModalCockIsOpen(false);
 
       console.log("Producto actualizado correctamente en Realtime Database");
     } catch (error) {
@@ -406,7 +428,10 @@ function App() {
           </button>
           <button
             className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md ml-3"
-            onClick={() => setPageView("sales")}
+            onClick={() => {
+              setPageView("sales");
+              setOrderSelected(null);
+            }}
           >
             Realizar venta <FontAwesomeIcon icon={faCartShopping} />
           </button>
@@ -634,8 +659,8 @@ function App() {
             <div className="bg-white flex flex-col h-full shadow text-blue-gray-800">
               <div className="flex-1 flex flex-col overflow-auto">
                 {orderSelected ? (
-                  <div className="flex-1 w-full overflow-auto mt-1">
-                    <Cart cart={orderSelected?.products || []} />
+                  <div className="flex-1 w-full overflow-auto">
+                    <Cart cart={orderSelected?.products || []} isCreated={true} />
                   </div>
                 ) : (
                   <div className="flex-1 w-full p-4 opacity-25 flex flex-col flex-wrap content-center justify-center">
@@ -675,9 +700,14 @@ function App() {
                       <button
                         className="text-white text-lg w-full h-full py-3 focus:outline-none bg-gray-500 hover:bg-cyan-600"
                         onClick={() => {
-                          orderSelected.orderStatus === "PAID"
-                            ? "YA SE PAGO" //TODO: NO DEJAR EDITAR
-                            : "Pagar";
+                          if (orderSelected?.orderStatus === "PAID") {
+                            return;
+                          }
+                          setProductsInOrderByDbHandler(
+                            orderSelected?.products
+                          );
+                          setIsEditOrder(true);
+                          setPageView("sales");
                         }}
                       >
                         Editar Orden <FontAwesomeIcon icon={faUtensils} />
@@ -688,7 +718,7 @@ function App() {
                         className="text-white text-lg w-full h-[80px] py-3 focus:outline-none bg-cyan-500 hover:bg-cyan-600 font-semibold"
                         onClick={openModal}
                       >
-                        {orderSelected.orderStatus === "PAID"
+                        {orderSelected?.orderStatus === "PAID"
                           ? "YA SE PAGO"
                           : "Pagar"}
                       </button>
@@ -806,7 +836,7 @@ function App() {
                 className="text-white text-lg w-full h-[65px] py-3 focus:outline-none bg-green-400 hover:bg-green-500 rounded-md"
                 onClick={() => {
                   orderSelected
-                    ? updateOrderSelected(orderSelected?.id)
+                    ? updateOrderSelected()
                     : handleCreateAndCleanOrder(true);
                   setModalIsOpen(false);
                 }}
@@ -833,7 +863,13 @@ function App() {
               </div>
               <div className="flex mt-4 text-xs">
                 <div className="flex-grow">
-                  No. de items: {productsInOrder.length}
+                  No. de items:{" "}
+                  {isEditOrder
+                    ? productsInOrder.filter(
+                        (producto) =>
+                          producto.quantity !== producto.initialQuantity
+                      ).length
+                    : productsInOrder.length}
                 </div>
                 <div className="text-md">
                   {new Date().toLocaleString(undefined, { hour12: true })}
@@ -850,20 +886,43 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {productsInOrder.map((item: any, index: any) => (
-                      <tr key={index}>
-                        <td className="py-2 text-center">{index + 1}</td>
-                        <td className="py-2 text-left">
-                          <span>{item.name}</span>
-                          <br />
-                          {item?.note && <small>Nota: {item.note}</small>}
+                    {isEditOrder
+                      ? productsInOrder
+                          .filter(
+                            (producto) =>
+                              producto.quantity !== producto.initialQuantity
+                          )
+                          .map((item: any, index: any) => (
+                            <tr key={index}>
+                              <td className="py-2 text-center">{index + 1}</td>
+                              <td className="py-2 text-left">
+                                <span>{item.name}</span>
+                                <br />
+                                {item?.note && <small>Nota: {item.note}</small>}
+                              </td>
+                              <td className="py-2 text-center">
+                                {item?.initialQuantity
+                                  ? item.quantity - item?.initialQuantity
+                                  : item.quantity}
+                              </td>
+                            </tr>
+                          ))
+                      : productsInOrder.map((item: any, index: any) => (
+                          <tr key={index}>
+                            <td className="py-2 text-center">{index + 1}</td>
+                            <td className="py-2 text-left">
+                              <span>{item.name}</span>
+                              <br />
+                              {item?.note && <small>Nota: {item.note}</small>}
 
-                          {/* <br />
+                              {/* <br />
                           <small>Sabores: Chocolate, Mandarina</small> */}
-                        </td>
-                        <td className="py-2 text-center">{item.quantity}</td>
-                      </tr>
-                    ))}
+                            </td>
+                            <td className="py-2 text-center">
+                              {item.quantity}
+                            </td>
+                          </tr>
+                        ))}
                   </tbody>
                 </table>
               </div>
@@ -913,10 +972,26 @@ function App() {
               )}
               <button
                 className="bg-cyan-500 text-white text-lg px-4 py-3 rounded-2xl w-full focus:outline-none"
-                onClick={() => printAndProceed()}
+                onClick={() => {
+                  const haveItemsByDb = productsInOrder.filter(
+                    (producto) => producto.quantity !== producto.initialQuantity
+                  ).length;
+                  const haveItems = productsInOrder.length;
+                  if (haveItemsByDb || haveItems) {
+                    printAndProceed();
+                  }
+                }}
               >
                 IMPRIMIR
               </button>
+              {isEditOrder && (
+                <button
+                  className="bg-green-500 text-white text-lg px-4 py-3 rounded-2xl w-full focus:outline-none mt-2"
+                  onClick={() => updateOrderSelected()}
+                >
+                  SOLO GUARDAR CAMBIOS
+                </button>
+              )}
             </div>
           </div>
         </Modal>

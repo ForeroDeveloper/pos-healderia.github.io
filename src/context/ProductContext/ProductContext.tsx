@@ -14,6 +14,7 @@ interface ProductContextProps {
   categoriesList: any[];
   productsInOrder: any[];
   orderSelected: any;
+  isEditOrder: boolean;
   addProduct: (newProduct: any) => void;
   addProductOrder: (newProduct: any) => void;
   removeProduct: (productId: number) => void;
@@ -28,7 +29,9 @@ interface ProductContextProps {
   setProductsInOrder: (newProductList: any[]) => void;
   setFlavorsList: (newProductList: any[]) => void;
   setCategories: (categories: any[]) => void;
-  setOrderSelected: (categories: any[]) => void;
+  setOrderSelected: (categories: any[] | null) => void;
+  setProductsInOrderByDbHandler: (productsByDb: any[] | null) => void;
+  setIsEditOrder: (isEdit: boolean) => void;
 }
 
 const ProductContext = createContext<ProductContextProps | undefined>(
@@ -54,7 +57,8 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
   const [flavorsList, setFlavorsList] = useState<any[]>([]);
   const [categoriesList, setCategories] = useState<any[]>([]);
   const [productsInOrder, setProductsInOrder] = useState<any[]>([]);
-  const [orderSelected, setOrderSelected] = useState<any>(null);
+  const [orderSelected, setOrderSelected] = useState<any | null>(null);
+  const [isEditOrder, setIsEditOrder] = useState<boolean>(false);
 
   const addProduct = (newProduct: any) => {
     setProductList((prevList) => [...prevList, newProduct]);
@@ -135,6 +139,12 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
   const setOrderSelectedHandler = (order: any) => {
     setOrderSelected(order);
   };
+  const setProductsInOrderByDbHandler = (productsInOrder: any) => {
+    setProductsInOrder(productsInOrder);
+  };
+  const setIsEditDbHandler = (isEdit: boolean) => {
+    setIsEditOrder(isEdit);
+  };
 
   const value: ProductContextProps = {
     productList,
@@ -152,6 +162,9 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
     flavorsList,
     setFlavorsList: setFlavorsListHandler,
     orderSelected,
+    setProductsInOrderByDbHandler,
+    setIsEditOrder: setIsEditDbHandler,
+    isEditOrder,
     setOrderSelected: setOrderSelectedHandler,
   };
 
