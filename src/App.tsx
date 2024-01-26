@@ -224,7 +224,7 @@ function App() {
     const totalCalculated = calculateTotal();
 
     let productsInOrder2 = productsInOrder.map((product) => {
-      const updatedNotes = Object.values(product?.notes)
+      const updatedNotes = product.notes ? Object?.values(product?.notes) : ['']
         .map((note: any) => `${note.id}: ${note.note}`)
         .join(" | ");
       return { ...product, notes: updatedNotes };
@@ -1128,7 +1128,7 @@ function App() {
               {isEditOrder && (
                 <button
                   className="bg-green-500 text-white text-lg px-4 py-3 rounded-2xl w-full focus:outline-none mt-2"
-                  onClick={() => updateOrderSelected()}
+                  onClick={() => updateOrderSelected(false)}
                 >
                   SOLO GUARDAR CAMBIOS
                 </button>
