@@ -187,8 +187,7 @@ function App() {
       currentDate.getMonth() + 1
     }-${currentDate.getFullYear()}`;
     try {
-
-      console.log('productsInOrder', productsInOrder)
+      console.log("productsInOrder", productsInOrder);
 
       const ordersRef = ref(realtimeDb, `orders/${formattedDate}`);
       const newOrderRef = push(ordersRef);
@@ -223,11 +222,18 @@ function App() {
 
   const printAndProceed = () => {
     const totalCalculated = calculateTotal();
-    console.log(totalCalculated, productsInOrder);
+
+    let productsInOrder2 = productsInOrder.map((product) => {
+      const updatedNotes = Object.values(product?.notes)
+        .map((note: any) => `${note.id}: ${note.note}`)
+        .join(" | ");
+      return { ...product, notes: updatedNotes };
+    });
 
     let arrayDataText = JSON.stringify({
-      products: productsInOrder,
+      products: productsInOrder2,
       isDelivery: isChecked,
+      total: totalCalculated,
     });
     handleCreateAndCleanOrder();
 
@@ -389,7 +395,7 @@ function App() {
             initialQuantity: product?.quantity,
           })),
           orderStatus: isPaid ? "PAID" : "PENDING",
-          total: calculateTotalUpdate(productsMap)
+          total: calculateTotalUpdate(productsMap),
         });
       } else {
         await remove(productRef);
@@ -430,6 +436,73 @@ function App() {
   // };
 
   // useEffect(() => {}, [productSelected]);
+
+  const data = {
+    products: [
+      {
+        category: "Heladeria",
+        cost: 0,
+        flavors: 0,
+        id: "00cf12a3-2a8d-4a8e-8cd6-6308051cc0db",
+        initialQuantity: 1,
+        isStock: true,
+        name: "CHOCOCONO SENCILLO",
+        notes: [
+          {
+            id: 1,
+            note: "Maracuya-Lulo, Chocolate",
+          },
+          {
+            id: 2,
+            note: "Vainilla, Fresa",
+          },
+        ],
+        price: 4000,
+        quantity: 2,
+        sku: "122",
+        stock: 0,
+        test: "valor",
+      },
+      {
+        category: "Heladeria",
+        cost: 0,
+        flavors: 0,
+        id: "100cf12a3-2a8d-4a8e-8cd6-6308051cc0db",
+        initialQuantity: 1,
+        isStock: true,
+        name: "1 CHOCOCONO SENCILLO",
+        notes: [
+          {
+            id: 1,
+            note: "Maracuya-Lulo, Chocolate",
+          },
+          {
+            id: 2,
+            note: "Fresa",
+          },
+        ],
+        price: 4000,
+        quantity: 2,
+        sku: "122",
+        stock: 0,
+        test: "valor",
+      },
+    ],
+    isDelivery: false,
+  };
+
+  // Recorremos los productos
+  const notesConcatenadas = data.products
+    .map((producto) => {
+      // Recorremos las notas y concatenamos el id con la nota
+      const notasConcatenadas = producto.notes
+        .map((nota) => `${nota.id}: ${nota.note}`)
+        .join(" | ");
+      return notasConcatenadas;
+    })
+    .join(", ");
+
+  console.log(notesConcatenadas, "concatenados");
 
   return (
     <>
@@ -529,7 +602,11 @@ function App() {
                         }}
                       >
                         Pendiente
-                        <FontAwesomeIcon icon={faMoneyBill} color="black" className="ml-2" />
+                        <FontAwesomeIcon
+                          icon={faMoneyBill}
+                          color="black"
+                          className="ml-2"
+                        />
                       </button>
                     </div>
                     <div className="flex-grow">
