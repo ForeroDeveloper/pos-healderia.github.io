@@ -226,7 +226,7 @@ function App() {
     // const updatedNotes = !!product.notes ? Object?.values(product?.notes) : ['']
     let productsInOrder2 = productsInOrder.map((product) => {
       const updatedNotes = Object?.values(product?.notes)
-      .map((note: any) => `${note.id}: ${note.note}`)
+      .map((note: any) => `P${note.id}: ${note.note}`)
       .join(", ");
       console.log("updatednota", updatedNotes)
       return { ...product, notes: updatedNotes };
