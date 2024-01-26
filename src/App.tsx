@@ -222,20 +222,23 @@ function App() {
 
   const printAndProceed = () => {
     const totalCalculated = calculateTotal();
-
+    
+    // const updatedNotes = !!product.notes ? Object?.values(product?.notes) : ['']
     let productsInOrder2 = productsInOrder.map((product) => {
-      const updatedNotes = product.notes ? Object?.values(product?.notes) : ['']
-        .map((note: any) => `${note.id}: ${note.note}`)
-        .join(" | ");
+      const updatedNotes = Object?.values(product?.notes)
+      .map((note: any) => `${note.id}: ${note.note}`)
+      .join(", ");
+      console.log("updatednota", updatedNotes)
       return { ...product, notes: updatedNotes };
     });
+    console.log('print', productsInOrder2)
 
     let arrayDataText = JSON.stringify({
       products: productsInOrder2,
       isDelivery: isChecked,
       total: totalCalculated,
     });
-    handleCreateAndCleanOrder();
+    // handleCreateAndCleanOrder();
 
     console.log(arrayDataText);
     console.log(`${arrayDataText}`);
@@ -1039,7 +1042,7 @@ function App() {
                               <td className="py-2 text-left">
                                 <span>{item.name}</span>
                                 <br />
-                                {item?.note && <small>Nota: {item.note}</small>}
+                                {/* {item?.note && <small>Nota: {item.note}</small>} */}
                               </td>
                               <td className="py-2 text-center">
                                 {item?.initialQuantity
