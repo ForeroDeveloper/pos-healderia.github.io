@@ -517,6 +517,7 @@ function App() {
                           } else {
                             updateOrderSelected(false); //TODO: cuadno es uan orden creda anterioirmente
                           }
+                          setIsEditOrder(false);
                         }}
                       >
                         Pendiente
