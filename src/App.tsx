@@ -223,9 +223,7 @@ function App() {
   const printAndProceed = () => {
     const totalCalculated = calculateTotal();
 
-    // const updatedNotes = !!product.notes ? Object?.values(product?.notes) : ['']
     let productsInOrder2 = productsInOrder.map((product) => {
-      // Verificar si product?.notes existe
       if (product?.notes) {
         const updatedNotes = Object?.values(product.notes || [])
           .map((note: any) => (note !== "" ? `P${note.id}: ${note.note}` : ""))
@@ -233,11 +231,9 @@ function App() {
         console.log("updatednota", updatedNotes);
         return { ...product, notes: updatedNotes };
       } else {
-        // Si product?.notes no existe, devolver el producto sin cambios
         return product;
       }
     });
-    console.log("print", productsInOrder2);
 
     let arrayDataText = JSON.stringify({
       products: productsInOrder2,
@@ -246,8 +242,9 @@ function App() {
       date: new Date().toLocaleString(undefined, { hour12: true }),
       address,
       phoneClient,
+      orderId: Object.keys(orderByDb).length + 1,
     });
-    // handleCreateAndCleanOrder();
+    handleCreateAndCleanOrder();
 
     console.log(arrayDataText);
     console.log(`${arrayDataText}`);
@@ -349,7 +346,6 @@ function App() {
           id: productId,
           ...data[productId],
         }));
-        console.log(flavors, "sabores");
         setFlavorsList(flavors);
         setFlavorsInContext(flavors);
       },
@@ -425,96 +421,6 @@ function App() {
       );
     }
   };
-
-  // const handleChageQuantityProduct = (number: any) => {
-
-  //   if (number.value === "borrar") {
-  //     setValueInProduct((prevValue) => prevValue.slice(0, -1));
-  //     return;
-  //   }
-  //   if (number.label.includes("+")) {
-  //     setValueInProduct((prevValue) => {
-  //       const newValue = Number(prevValue) + Number(number.value);
-  //       return newValue.toString();
-  //     });
-  //     return;
-  //   }
-  //   if (number.value === "no-action") {
-  //     return;
-  //   }
-  //   setValueInProduct((prevValue) => {
-  //     return prevValue + number.value.toString();
-  //   });
-  // };
-
-  // useEffect(() => {}, [productSelected]);
-
-  const data = {
-    products: [
-      {
-        category: "Heladeria",
-        cost: 0,
-        flavors: 0,
-        id: "00cf12a3-2a8d-4a8e-8cd6-6308051cc0db",
-        initialQuantity: 1,
-        isStock: true,
-        name: "CHOCOCONO SENCILLO",
-        notes: [
-          {
-            id: 1,
-            note: "Maracuya-Lulo, Chocolate",
-          },
-          {
-            id: 2,
-            note: "Vainilla, Fresa",
-          },
-        ],
-        price: 4000,
-        quantity: 2,
-        sku: "122",
-        stock: 0,
-        test: "valor",
-      },
-      {
-        category: "Heladeria",
-        cost: 0,
-        flavors: 0,
-        id: "100cf12a3-2a8d-4a8e-8cd6-6308051cc0db",
-        initialQuantity: 1,
-        isStock: true,
-        name: "1 CHOCOCONO SENCILLO",
-        notes: [
-          {
-            id: 1,
-            note: "Maracuya-Lulo, Chocolate",
-          },
-          {
-            id: 2,
-            note: "Fresa",
-          },
-        ],
-        price: 4000,
-        quantity: 2,
-        sku: "122",
-        stock: 0,
-        test: "valor",
-      },
-    ],
-    isDelivery: false,
-  };
-
-  // Recorremos los productos
-  const notesConcatenadas = data.products
-    .map((producto) => {
-      // Recorremos las notas y concatenamos el id con la nota
-      const notasConcatenadas = producto.notes
-        .map((nota) => `${nota.id}: ${nota.note}`)
-        .join(" | ");
-      return notasConcatenadas;
-    })
-    .join(", ");
-
-  console.log(notesConcatenadas, "concatenados");
 
   return (
     <>
