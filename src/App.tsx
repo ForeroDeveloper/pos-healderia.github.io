@@ -250,7 +250,12 @@ function App() {
       phoneClient,
       orderId: Object.keys(orderByDb).length + 1,
     });
-    handleCreateAndCleanOrder();
+
+    if(!orderSelected){
+      handleCreateAndCleanOrder();
+    }else {
+      updateOrderSelected(false);
+    }
 
     console.log(arrayDataText);
     console.log(`${arrayDataText}`);
@@ -352,6 +357,10 @@ function App() {
     try {
       const flavorRef = ref(realtimeDb, `orders/${formattedDate}/${id}`);
       remove(flavorRef);
+      if(orderByDb.length === 1){
+        setOrdersByDb([]);
+        setOrderSelected([])
+      }
     } catch (error) {
       console.error("Error al eliminar en Realtime Database:", error);
     }
@@ -442,6 +451,8 @@ function App() {
       );
     }
   };
+
+  console.log(orderSelected, 'orden seleccionada')
 
   return (
     <>
@@ -534,8 +545,10 @@ function App() {
                         className="text-gray text-lg w-full h-full py-3 focus:outline-none bg-yellow-300 hover:bg-yellow-400"
                         onClick={() => {
                           if (productsInOrder?.length && !orderSelected) {
+                            console.log('se crea uno nuevo', orderSelected)
                             handleCreateAndCleanOrder();
                           } else {
+                            console.log('es una orden seleccionada', orderSelected)
                             updateOrderSelected(false); //TODO: cuadno es uan orden creda anterioirmente
                           }
                           setIsEditOrder(false);
