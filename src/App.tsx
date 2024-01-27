@@ -207,6 +207,7 @@ function App() {
         date: new Date().toLocaleString(undefined, { hour12: true }),
         addressClient: address,
         phoneClient,
+        isPrint: false,
       };
       set(newOrderRef, newOrderToDb);
       setValueInPayment("");
@@ -227,6 +228,8 @@ function App() {
     const totalCalculated = calculateTotal();
 
     let productsInOrder2 = productsInOrder.map((product) => {
+      console.log("tiene nota", product);
+
       if (product?.notes) {
         const updatedNotes = Object?.values(product.notes || [])
           .map((note: any) => (note !== "" ? `P${note.id}: ${note.note}` : ""))
@@ -833,7 +836,8 @@ function App() {
                     <span className="mr-2">Total Venta</span>
                     <span
                       className={`${
-                        Number(valueInPayment) >= (!!orderSelected
+                        Number(valueInPayment) >=
+                        (!!orderSelected
                           ? orderSelected?.total
                           : calculateTotal())
                           ? "text-green-600 font-semibold"
@@ -966,7 +970,7 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {isEditOrder
+                    {isEditOrder && orderSelected?.isPrint
                       ? productsInOrder
                           .filter(
                             (producto) =>
@@ -1057,8 +1061,10 @@ function App() {
                     (producto) => producto.quantity !== producto.initialQuantity
                   ).length;
                   const haveItems = productsInOrder.length;
-                  if (haveItemsByDb || haveItems) {
+                  if (haveItemsByDb || orderSelected?.isPrint || haveItems) {
                     printAndProceed();
+                    setPhoneClient("");
+                    setAddress("");
                   }
                 }}
               >
@@ -1067,7 +1073,11 @@ function App() {
               {isEditOrder && (
                 <button
                   className="bg-green-500 text-white text-lg px-4 py-3 rounded-2xl w-full focus:outline-none mt-2"
-                  onClick={() => updateOrderSelected(false)}
+                  onClick={() => {
+                    updateOrderSelected(false);
+                    setPhoneClient("");
+                    setAddress("");
+                  }}
                 >
                   SOLO GUARDAR CAMBIOS
                 </button>

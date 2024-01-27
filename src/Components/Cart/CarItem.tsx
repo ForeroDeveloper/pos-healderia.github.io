@@ -142,6 +142,7 @@ const CarItem = ({ item, productSelected, isCreated }: any) => {
           </div>
         )} */}
       </div>
+
       <div
         className={`fixed inset-0 z-50 flex items-center justify-center ${
           openModal ? "" : "hidden"
@@ -151,11 +152,6 @@ const CarItem = ({ item, productSelected, isCreated }: any) => {
           className="absolute inset-0 bg-gray-800 opacity-50"
           onClick={() => {
             setOpenModal(!openModal);
-            updateProductOrder(
-              item.id,
-              { ...item, notes: { ...formatterNotes() } },
-              false
-            );
           }}
         ></div>
         <div className="bg-white p-8 rounded shadow-lg z-10 w-[400px]">

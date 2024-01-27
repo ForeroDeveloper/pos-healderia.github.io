@@ -10,7 +10,7 @@ const ImageComponent = ({ src }: any) => {
       className="w-full object-contain h-[100px]"
       // width="50%"
       // height="100px"
-      placeholderSrc="https://cimex.cl/wp-content/themes/cimex/assets/img/placeholder/full.png"
+      placeholderSrc="https://eslotparts.com/wp-content/uploads/2021/05/image-placeholder.png"
     ></LazyLoadImage>
   );
 };
