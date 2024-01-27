@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { MutableRefObject, useEffect, useRef, useState } from "react";
+import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import Cart from "./Components/Cart/Cart";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -26,6 +26,7 @@ import { v4 as uuidv4 } from "uuid";
 import { ref, set, push, onValue, remove, update } from "firebase/database";
 // @ts-expect-error
 import { db, realtimeDb } from "../src/config/firestore.js";
+import ImageComponent from "./Components/ImageComponent/ImageComponent.js";
 declare global {
   interface Window {
     Toaster: any;
@@ -122,6 +123,7 @@ function App() {
 
   const closeModal = () => {
     setModalIsOpen(false);
+    setValueInPayment("");
   };
 
   const buttonsData = [
@@ -276,8 +278,24 @@ function App() {
     setCategorySelected(category);
   };
 
-  useEffect(() => {
-    const productsFiltered = productList.filter((product) => {
+  // useEffect(() => {
+  //   const productsFiltered = productList.filter((product) => {
+  //     const productNameLowerCase = product.name.toLowerCase();
+  //     const searchTermLowerCase = searchTerm.toLowerCase();
+
+  //     const nameFilter = productNameLowerCase.includes(searchTermLowerCase);
+
+  //     const categoryFilter =
+  //       !categorySelected || product.category === categorySelected;
+
+  //     return searchTerm.length > 0 ? nameFilter : categoryFilter;
+  //   });
+
+  //   setProductsBySearch(productsFiltered);
+  // }, [searchTerm, categorySelected, productList]);
+  // Dentro de tu componente
+  const filteredProducts = useMemo(() => {
+    return productList.filter((product) => {
       const productNameLowerCase = product.name.toLowerCase();
       const searchTermLowerCase = searchTerm.toLowerCase();
 
@@ -288,8 +306,6 @@ function App() {
 
       return searchTerm.length > 0 ? nameFilter : categoryFilter;
     });
-
-    setProductsBySearch(productsFiltered);
   }, [searchTerm, categorySelected, productList]);
 
   const [inputFlavors, setInputFlavors] = useState("");
@@ -612,7 +628,7 @@ function App() {
 
             {/* {LISTA DE PRODUCTOS} */}
             <div className="grid grid-cols-4 gap-2 pb-2 text-gray-700 p-2">
-              {productsBySearch.map((producto) => (
+              {filteredProducts.map((producto) => (
                 <div
                   key={producto.id}
                   role="button"
@@ -622,16 +638,9 @@ function App() {
                   }}
                   className="cursor-pointer transition-shadow overflow-hidden rounded-2xl bg-white shadow hover:shadow-lg"
                 >
-                  <img
-                    src={
-                      producto?.image ||'https://cimex.cl/wp-content/themes/cimex/assets/img/placeholder/full.png'
-                    }
-                    loading="lazy"
-                    className="w-full object-contain h-[100px]"
-                    alt={producto?.name}
-                  />
+                  <ImageComponent src={producto.image} />
                   <div className="flex flex-col pb-3 px-3 text-sm justify-start text-left">
-                    <p className="flex-grow truncate mr-1">{producto.name}</p>
+                    <p className="flex-grow mr-1">{producto.name}</p>
                     <p className="nowrap font-bold text-cyan-500">
                       $ {new Intl.NumberFormat().format(producto.price)}
                     </p>
@@ -822,7 +831,15 @@ function App() {
                   </div>
                   <div className="w-full flex font-normal text-gray-500">
                     <span className="mr-2">Total Venta</span>
-                    <span>
+                    <span
+                      className={`${
+                        Number(valueInPayment) >= (!!orderSelected
+                          ? orderSelected?.total
+                          : calculateTotal())
+                          ? "text-green-600 font-semibold"
+                          : "text-gray-500"
+                      }`}
+                    >
                       $
                       {new Intl.NumberFormat().format(
                         calculateTotal() || orderSelected?.total
