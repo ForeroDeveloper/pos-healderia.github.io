@@ -626,6 +626,7 @@ function App() {
                     src={
                       producto?.image ||'https://cimex.cl/wp-content/themes/cimex/assets/img/placeholder/full.png'
                     }
+                    className="w-full object-contain h-[100px]"
                     alt={producto?.name}
                   />
                   <div className="flex flex-col pb-3 px-3 text-sm justify-start text-left">
