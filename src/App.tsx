@@ -278,6 +278,11 @@ function App() {
       setProductSelected(productsInOrder[productsInOrder.length - 1]);
     }
   }, [productSelected, productsInOrder]);
+  useEffect(() => {
+   if(orderSelected){
+    setIsChecked(orderSelected?.isDelivery);
+   }
+  }, [orderSelected]);
 
   const calculateTotal = () => {
     const total = productsInOrder.reduce((acumulador, producto) => {
@@ -290,22 +295,6 @@ function App() {
     setCategorySelected(category);
   };
 
-  // useEffect(() => {
-  //   const productsFiltered = productList.filter((product) => {
-  //     const productNameLowerCase = product.name.toLowerCase();
-  //     const searchTermLowerCase = searchTerm.toLowerCase();
-
-  //     const nameFilter = productNameLowerCase.includes(searchTermLowerCase);
-
-  //     const categoryFilter =
-  //       !categorySelected || product.category === categorySelected;
-
-  //     return searchTerm.length > 0 ? nameFilter : categoryFilter;
-  //   });
-
-  //   setProductsBySearch(productsFiltered);
-  // }, [searchTerm, categorySelected, productList]);
-  // Dentro de tu componente
   const filteredProducts = useMemo(() => {
     return productList.filter((product) => {
       const productNameLowerCase = product.name.toLowerCase();
@@ -459,7 +448,16 @@ function App() {
     }
   };
 
-  console.log(orderSelected, "orden seleccionada");
+  // useEffect(() => {
+  //   if (
+  //     productsInOrder?.length > 0 &&
+  //     productsInOrder?.findIndex(
+  //       (products) => products?.id === productSelected?.id
+  //     ) === -1
+  //   ) {
+  //     setProductSelected(productsInOrder[productsInOrder.length - 1]);
+  //   }
+  // }, [productSelected, productsInOrder]);
 
   return (
     <>
@@ -555,13 +553,10 @@ function App() {
                             console.log("se crea uno nuevo", orderSelected);
                             handleCreateAndCleanOrder();
                           } else {
-                            console.log(
-                              "es una orden seleccionada",
-                              orderSelected
-                            );
                             updateOrderSelected(false); //TODO: cuadno es uan orden creda anterioirmente
                           }
                           setIsEditOrder(false);
+                          setIsChecked(false);
                         }}
                       >
                         Pendiente
@@ -939,6 +934,7 @@ function App() {
               <button
                 className="text-white text-lg w-full h-[65px] py-3 focus:outline-none bg-green-400 hover:bg-green-500 rounded-md"
                 onClick={() => {
+                  setIsChecked(false);
                   if (orderSelected) {
                     updateOrderSelected();
                     setModalIsOpen(false);
@@ -946,6 +942,7 @@ function App() {
                   }
                   handleCreateAndCleanOrder(true);
                   setModalIsOpen(false);
+                  setIsChecked(false);
                 }}
               >
                 Confirmar
@@ -1097,6 +1094,7 @@ function App() {
                     setPhoneClient("");
                     setAddress("");
                   }
+                  setIsChecked(false);
                 }}
               >
                 IMPRIMIR
@@ -1108,6 +1106,7 @@ function App() {
                     updateOrderSelected(false);
                     setPhoneClient("");
                     setAddress("");
+                    setIsChecked(false);
                   }}
                 >
                   SOLO GUARDAR CAMBIOS
