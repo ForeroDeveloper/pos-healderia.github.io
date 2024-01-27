@@ -626,6 +626,7 @@ function App() {
                     src={
                       producto?.image ||'https://cimex.cl/wp-content/themes/cimex/assets/img/placeholder/full.png'
                     }
+                    loading="lazy"
                     className="w-full object-contain h-[100px]"
                     alt={producto?.name}
                   />
