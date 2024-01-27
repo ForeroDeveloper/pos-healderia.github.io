@@ -201,7 +201,7 @@ function App() {
           ...product,
           initialQuantity: product.quantity,
         })),
-        total: calculateTotal(),
+        total: calculateTotal() + isChecked ? 1500 : 0,
         isDelivery: isChecked,
         orderStatus: isPayment ? "PAID" : "PENDING",
         date: new Date().toLocaleString(undefined, { hour12: true }),
@@ -244,16 +244,16 @@ function App() {
     let arrayDataText = JSON.stringify({
       products: productsInOrder2,
       isDelivery: isChecked,
-      total: totalCalculated,
+      total: totalCalculated + isChecked ? 1500 : 0,
       date: new Date().toLocaleString(undefined, { hour12: true }),
       address,
       phoneClient,
       orderId: Object.keys(orderByDb).length + 1,
     });
 
-    if(!orderSelected){
+    if (!orderSelected) {
       handleCreateAndCleanOrder();
-    }else {
+    } else {
       updateOrderSelected(false);
     }
 
@@ -357,9 +357,9 @@ function App() {
     try {
       const flavorRef = ref(realtimeDb, `orders/${formattedDate}/${id}`);
       remove(flavorRef);
-      if(orderByDb.length === 1){
+      if (orderByDb.length === 1) {
         setOrdersByDb([]);
-        setOrderSelected([])
+        setOrderSelected([]);
       }
     } catch (error) {
       console.error("Error al eliminar en Realtime Database:", error);
@@ -433,7 +433,7 @@ function App() {
             initialQuantity: product?.quantity,
           })),
           orderStatus: isPaid ? "PAID" : "PENDING",
-          total: calculateTotalUpdate(productsMap),
+          total: calculateTotalUpdate(productsMap) + isChecked ? 1500 : 0,
         });
       } else {
         await remove(productRef);
@@ -452,7 +452,7 @@ function App() {
     }
   };
 
-  console.log(orderSelected, 'orden seleccionada')
+  console.log(orderSelected, "orden seleccionada");
 
   return (
     <>
@@ -545,10 +545,13 @@ function App() {
                         className="text-gray text-lg w-full h-full py-3 focus:outline-none bg-yellow-300 hover:bg-yellow-400"
                         onClick={() => {
                           if (productsInOrder?.length && !orderSelected) {
-                            console.log('se crea uno nuevo', orderSelected)
+                            console.log("se crea uno nuevo", orderSelected);
                             handleCreateAndCleanOrder();
                           } else {
-                            console.log('es una orden seleccionada', orderSelected)
+                            console.log(
+                              "es una orden seleccionada",
+                              orderSelected
+                            );
                             updateOrderSelected(false); //TODO: cuadno es uan orden creda anterioirmente
                           }
                           setIsEditOrder(false);
@@ -1024,6 +1027,14 @@ function App() {
                 </table>
               </div>
               <hr className="my-2" />
+              <div className="w-full justify-end flex">
+                <span className="font-bold text-right">
+                  TOTAL $
+                  {isChecked
+                    ? new Intl.NumberFormat().format(calculateTotal() + 1500)
+                    : new Intl.NumberFormat().format(calculateTotal())}
+                </span>
+              </div>
             </div>
             <div className="p-4 w-full hide-print">
               <div className="items-center mb-4 ml-2 justify-center flex cursor-pointer">
