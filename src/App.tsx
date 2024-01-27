@@ -194,6 +194,8 @@ function App() {
       const ordersRef = ref(realtimeDb, `orders/${formattedDate}`);
       const newOrderRef = push(ordersRef);
       const newOrderKEy = newOrderRef.key;
+      const deliveryCost = isChecked ? 1500 : 0;
+
       const newOrderToDb = {
         id: newOrderKEy,
         orderId: Object.keys(orderByDb).length + 1,
@@ -201,7 +203,7 @@ function App() {
           ...product,
           initialQuantity: product.quantity,
         })),
-        total: calculateTotal() + isChecked ? 1500 : 0,
+        total: Number(calculateTotal() + deliveryCost),
         isDelivery: isChecked,
         orderStatus: isPayment ? "PAID" : "PENDING",
         date: new Date().toLocaleString(undefined, { hour12: true }),
@@ -241,10 +243,12 @@ function App() {
       }
     });
 
+    const deliveryCost = isChecked ? 1500 : 0;
+
     let arrayDataText = JSON.stringify({
       products: productsInOrder2,
       isDelivery: isChecked,
-      total: totalCalculated + isChecked ? 1500 : 0,
+      total: Number(totalCalculated + deliveryCost),
       date: new Date().toLocaleString(undefined, { hour12: true }),
       address,
       phoneClient,
@@ -425,6 +429,9 @@ function App() {
         ? productsInOrder
         : orderSelected?.products;
 
+      const deliveryCost = isChecked ? 1500 : 0;
+
+
       if (productsInOrder?.length || orderSelected?.products) {
         await update(productRef, {
           products: productsMap.map((product: any) => ({
@@ -433,7 +440,7 @@ function App() {
             initialQuantity: product?.quantity,
           })),
           orderStatus: isPaid ? "PAID" : "PENDING",
-          total: calculateTotalUpdate(productsMap) + isChecked ? 1500 : 0,
+          total: Number(calculateTotalUpdate(productsMap) + deliveryCost),
         });
       } else {
         await remove(productRef);
