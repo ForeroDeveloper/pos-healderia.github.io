@@ -207,6 +207,7 @@ function App() {
         phoneClient,
       };
       set(newOrderRef, newOrderToDb);
+      setValueInPayment("");
       console.log("Datos registrados en Realtime Database");
     } catch (error) {
       console.error("Error al registrar en Realtime Database:", error);
@@ -250,6 +251,7 @@ function App() {
     console.log(`${arrayDataText}`);
 
     window?.Toaster?.postMessage(`${arrayDataText}`);
+    setValueInPayment("");
   };
 
   useEffect(() => {
