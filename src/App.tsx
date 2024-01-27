@@ -90,7 +90,7 @@ function App() {
   const [pageView, setPageView] = useState("sales");
   const [categorySelected, setCategorySelected] = useState<string>();
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [productsBySearch, setProductsBySearch] = useState<any[]>([]);
+  // const [productsBySearch, setProductsBySearch] = useState<any[]>([]);
   const [flavorsList, setFlavorsList] = useState<any[]>([]);
 
   const {
