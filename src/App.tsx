@@ -222,21 +222,30 @@ function App() {
 
   const printAndProceed = () => {
     const totalCalculated = calculateTotal();
-    
+
     // const updatedNotes = !!product.notes ? Object?.values(product?.notes) : ['']
     let productsInOrder2 = productsInOrder.map((product) => {
-      const updatedNotes = Object?.values(product?.notes)
-      .map((note: any) => `P${note.id}: ${note.note}`)
-      .join(", ");
-      console.log("updatednota", updatedNotes)
-      return { ...product, notes: updatedNotes };
+      // Verificar si product?.notes existe
+      if (product?.notes) {
+        const updatedNotes = Object?.values(product.notes || [])
+          .map((note: any) => (note !== "" ? `P${note.id}: ${note.note}` : ""))
+          .join(", ");
+        console.log("updatednota", updatedNotes);
+        return { ...product, notes: updatedNotes };
+      } else {
+        // Si product?.notes no existe, devolver el producto sin cambios
+        return product;
+      }
     });
-    console.log('print', productsInOrder2)
+    console.log("print", productsInOrder2);
 
     let arrayDataText = JSON.stringify({
       products: productsInOrder2,
       isDelivery: isChecked,
       total: totalCalculated,
+      date: new Date().toLocaleString(undefined, { hour12: true }),
+      address,
+      phoneClient,
     });
     // handleCreateAndCleanOrder();
 
