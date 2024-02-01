@@ -16,7 +16,7 @@ interface ProductContextProps {
   orderSelected: any;
   isEditOrder: boolean;
   addProduct: (newProduct: any) => void;
-  addProductOrder: (newProduct: any) => void;
+  addProductOrder: (newProduct: any, quantity?: number) => void;
   removeProduct: (productId: number) => void;
   removeProductOrder: (productId: number) => void;
   updateProduct: (productId: number, updatedProduct: any) => void;
@@ -64,7 +64,7 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
     setProductList((prevList) => [...prevList, newProduct]);
   };
 
-  const addProductOrder = (newProduct: any) => {
+  const addProductOrder = (newProduct: any, quantity = 1) => {
     const existingProductIndex = productsInOrder.findIndex(
       (product) => product.id === newProduct.id
     );
@@ -74,7 +74,7 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
         const updatedList = [...prevList];
         updatedList[existingProductIndex] = {
           ...updatedList[existingProductIndex],
-          quantity: updatedList[existingProductIndex].quantity + 1,
+          quantity: updatedList[existingProductIndex].quantity + quantity,
         };
         return updatedList;
       });

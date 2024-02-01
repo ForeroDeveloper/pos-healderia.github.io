@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import Cart from "./Components/Cart/Cart";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -27,6 +27,8 @@ import { ref, set, push, onValue, remove, update } from "firebase/database";
 // @ts-expect-error
 import { db, realtimeDb } from "../src/config/firestore.js";
 import ImageComponent from "./Components/ImageComponent/ImageComponent.js";
+import { isMobile, isTablet, isDesktop } from "react-device-detect";
+
 declare global {
   interface Window {
     Toaster: any;
@@ -76,9 +78,8 @@ const OnScreenKeyboard = ({ onKeyPress }: any) => {
   );
 };
 function App() {
-  const printAreaRef: MutableRefObject<HTMLDivElement | null> = useRef(null);
   // const [inputValue, setInputValue] = useState("");
-  const [productSelected, setProductSelected] = useState<any>();
+  const [productSelected, setProductSelected] = useState<any>({});
   const [valueInPayment, setValueInPayment] = useState<string>("");
   const [address, setAddress] = useState<string>("");
   const [phoneClient, setPhoneClient] = useState<string>("");
@@ -88,6 +89,7 @@ function App() {
   const [openModalFlavors, setOpenModalFlavors] = useState(false);
   const [modalCockIsOpen, setModalCockIsOpen] = useState(false);
   const [pageView, setPageView] = useState("sales");
+  const [isPaymentView, setIsPaymentView] = useState(false);
   const [categorySelected, setCategorySelected] = useState<string>();
   const [searchTerm, setSearchTerm] = useState<string>("");
   // const [productsBySearch, setProductsBySearch] = useState<any[]>([]);
@@ -109,6 +111,7 @@ function App() {
   } = useProductContext();
 
   const [isChecked, setIsChecked] = useState(false);
+  const inputRef = useRef<any | null>(null);
 
   const handleCheckboxChange = () => {
     setIsChecked(!isChecked);
@@ -230,13 +233,10 @@ function App() {
     const totalCalculated = calculateTotal();
 
     let productsInOrder2 = productsInOrder.map((product) => {
-      console.log("tiene nota", product);
-
       if (product?.notes) {
         const updatedNotes = Object?.values(product.notes || [])
           .map((note: any) => (note !== "" ? `P${note.id}: ${note.note}` : ""))
           .join(", ");
-        console.log("updatednota", updatedNotes);
         return { ...product, notes: updatedNotes };
       } else {
         return product;
@@ -279,9 +279,9 @@ function App() {
     }
   }, [productSelected, productsInOrder]);
   useEffect(() => {
-   if(orderSelected){
-    setIsChecked(orderSelected?.isDelivery);
-   }
+    if (orderSelected) {
+      setIsChecked(orderSelected?.isDelivery);
+    }
   }, [orderSelected]);
 
   const calculateTotal = () => {
@@ -348,12 +348,13 @@ function App() {
       currentDate.getMonth() + 1
     }-${currentDate.getFullYear()}`;
     try {
-      const flavorRef = ref(realtimeDb, `orders/${formattedDate}/${id}`);
-      remove(flavorRef);
+      const orderRef = ref(realtimeDb, `orders/${formattedDate}/${id}`);
+      remove(orderRef);
       if (orderByDb.length === 1) {
         setOrdersByDb([]);
-        setOrderSelected([]);
+        setOrderSelected(null);
       }
+      setOrderSelected(null);
     } catch (error) {
       console.error("Error al eliminar en Realtime Database:", error);
     }
@@ -387,7 +388,7 @@ function App() {
       starCountRef,
       (snapshot) => {
         const data = snapshot.val();
-        const orders = Object.keys(data).map((productId) => ({
+        const orders = Object.keys(data || []).map((productId) => ({
           id: productId,
           ...data[productId],
         }));
@@ -420,7 +421,6 @@ function App() {
 
       const deliveryCost = isChecked ? 1500 : 0;
 
-
       if (productsInOrder?.length || orderSelected?.products) {
         await update(productRef, {
           products: productsMap.map((product: any) => ({
@@ -448,6 +448,17 @@ function App() {
     }
   };
 
+  const [isFocused, setIsFocused] = useState(false);
+
+  const handleButtonClick = () => {
+    if (isFocused) {
+      inputRef.current.blur();
+    } else {
+      inputRef.current.focus();
+    }
+    setIsFocused(!isFocused);
+  };
+
   // useEffect(() => {
   //   if (
   //     productsInOrder?.length > 0 &&
@@ -462,220 +473,483 @@ function App() {
   return (
     <>
       <div className="h-screen hide-print">
-        {/* {No print area} */}
-        <div className="w-full bg-cyan-800 h-11 py-2 pr-1 flex justify-end">
-          <button
-            className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md mr-3"
-            onClick={() => setOpenModalFlavors(true)}
-          >
-            Sabores de Helado <FontAwesomeIcon icon={faIceCream} />
-          </button>
-          <button
-            className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md mr-3"
-            onClick={() => setPageView("inventory")}
-          >
-            Inventario <FontAwesomeIcon icon={faBox} />
-          </button>
-          <button
-            className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md"
-            onClick={() => setPageView("orders")}
-          >
-            Ordenes <FontAwesomeIcon icon={faUtensils} />
-          </button>
-          <button
-            className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md ml-3"
-            onClick={() => {
-              setPageView("sales");
-              setOrderSelected(null);
-            }}
-          >
-            Realizar venta <FontAwesomeIcon icon={faCartShopping} />
-          </button>
-        </div>
+        {/* {Header con opciones} */}
+        {isDesktop ||
+          (isTablet && (
+            <div className="w-full bg-cyan-800 h-11 py-2 pr-1 flex justify-end">
+              <button
+                className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md mr-3"
+                onClick={() => setOpenModalFlavors(true)}
+              >
+                Sabores de Helado <FontAwesomeIcon icon={faIceCream} />
+              </button>
+              <button
+                className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md mr-3"
+                onClick={() => setPageView("inventory")}
+              >
+                Inventario <FontAwesomeIcon icon={faBox} />
+              </button>
+              <button
+                className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md"
+                onClick={() => setPageView("orders")}
+              >
+                Ordenes <FontAwesomeIcon icon={faUtensils} />
+              </button>
+              <button
+                className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md ml-3"
+                onClick={() => {
+                  setPageView("sales");
+                  setOrderSelected(null);
+                }}
+              >
+                Realizar venta <FontAwesomeIcon icon={faCartShopping} />
+              </button>
+            </div>
+          ))}
+
+        {isMobile && (
+          <div className="w-full bg-cyan-800 h-11 py-2 pr-1 flex justify-end">
+            <button
+              className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md mr-3"
+              onClick={() => setOpenModalFlavors(true)}
+            >
+              Sabores <FontAwesomeIcon icon={faIceCream} />
+            </button>
+
+            <button
+              className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md"
+              onClick={() => setPageView("orders")}
+            >
+              Ordenes <FontAwesomeIcon icon={faUtensils} />
+            </button>
+            <button
+              className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md ml-3"
+              onClick={() => {
+                setPageView("sales");
+                setOrderSelected(null);
+              }}
+            >
+              Venta <FontAwesomeIcon icon={faCartShopping} />
+            </button>
+          </div>
+        )}
 
         {/* {Modulo de venta} */}
-        <div className={`${pageView === "sales" ? "flex h-screen" : "hidden"}`}>
-          {/* Left Bar */}
-          <div className="lg:w-[40%]">
-            <div className="bg-white flex flex-col h-full shadow text-blue-gray-800">
-              <div className="flex-1 flex flex-col overflow-auto">
-                {productsInOrder.length ? (
-                  <div className="flex-1 w-full overflow-auto border-t-2">
-                    <Cart
-                      cart={productsInOrder}
-                      productSelected={productSelected}
-                    />
-                  </div>
-                ) : (
-                  <div className="flex-1 w-full p-4 opacity-25 flex flex-col flex-wrap content-center justify-center">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-16 inline-block"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+        {isDesktop && (
+          <div
+            className={`${pageView === "sales" ? "flex h-screen" : "hidden"}`}
+          >
+            {/* Left Bar */}
+            <div className="lg:w-[40%]">
+              <div className="bg-white flex flex-col h-full shadow text-blue-gray-800">
+                <div className="flex-1 flex flex-col overflow-auto">
+                  {productsInOrder.length ? (
+                    <div className="flex-1 w-full overflow-auto border-t-2">
+                      <Cart
+                        cart={productsInOrder}
+                        productSelected={productSelected}
                       />
-                    </svg>
-                    <p>CARRITO VACIO</p>
-                  </div>
-                )}
-
-                <div className="h-auto w-full text-center pb-1 px-4">
-                  <div className="flex text-lg font-semibold text-blue-gray-700">
-                    <div>TOTAL</div>
-                    <div className="text-right w-full font-bold">
-                      ${new Intl.NumberFormat().format(calculateTotal())}
                     </div>
-                  </div>
-                </div>
-
-                <div className="flex">
-                  <div className="flex flex-col h-full w-2/5">
-                    <div className="h-auto">
-                      <button
-                        className="text-white text-lg w-full h-full py-3 focus:outline-none bg-gray-500 hover:bg-gray-600"
-                        onClick={() => setModalCockIsOpen(!modalCockIsOpen)}
+                  ) : (
+                    <div className="flex-1 w-full p-4 opacity-25 flex flex-col flex-wrap content-center justify-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-16 inline-block"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
                       >
-                        M. Cocina <FontAwesomeIcon icon={faUtensils} />
-                      </button>
-                    </div>
-                    <div className="h-auto">
-                      <button
-                        className="text-gray text-lg w-full h-full py-3 focus:outline-none bg-yellow-300 hover:bg-yellow-400"
-                        onClick={() => {
-                          if (productsInOrder?.length && !orderSelected) {
-                            console.log("se crea uno nuevo", orderSelected);
-                            handleCreateAndCleanOrder();
-                          } else {
-                            updateOrderSelected(false); //TODO: cuadno es uan orden creda anterioirmente
-                          }
-                          setIsEditOrder(false);
-                          setIsChecked(false);
-                        }}
-                      >
-                        Pendiente
-                        <FontAwesomeIcon
-                          icon={faMoneyBill}
-                          color="black"
-                          className="ml-2"
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
                         />
-                      </button>
+                      </svg>
+                      <p>CARRITO VACIO</p>
                     </div>
-                    <div className="flex-grow">
-                      <button
-                        className="text-white text-lg w-full h-full py-3 focus:outline-none bg-cyan-500 hover:bg-cyan-600"
-                        onClick={openModal}
-                      >
-                        Pagar
-                      </button>
+                  )}
+
+                  <div className="h-auto w-full text-center pb-1 px-4">
+                    <div className="flex text-lg font-semibold text-blue-gray-700">
+                      <div>TOTAL</div>
+                      <div className="text-right w-full font-bold">
+                        ${new Intl.NumberFormat().format(calculateTotal())}
+                      </div>
                     </div>
                   </div>
-                  {/* {CALCULADORA} */}
-                  <div className="grid grid-cols-4 gap-0 grid-rows-4 w-3/5">
-                    {buttonsData.map((number) => (
-                      <button
-                        key={number.id}
-                        onClick={() => {
-                          if (number.value === "borrar") {
-                            updateProductOrder(
-                              productSelected.id,
-                              productSelected
-                            );
-                          } else {
-                            // handleChageQuantityProduct(number);
-                          }
-                        }}
-                        className="bg-white text-gray p-3 hover:bg-gray-300 focus:outline-none border border-solid border-gray-500"
-                      >
-                        {number.label}
-                      </button>
-                    ))}
+
+                  <div className="flex">
+                    <div className="flex flex-col h-full w-2/5">
+                      <div className="h-auto">
+                        <button
+                          className="text-white text-lg w-full h-full py-3 focus:outline-none bg-gray-500 hover:bg-gray-600"
+                          onClick={() => setModalCockIsOpen(!modalCockIsOpen)}
+                        >
+                          M. Cocina <FontAwesomeIcon icon={faUtensils} />
+                        </button>
+                      </div>
+                      <div className="h-auto">
+                        <button
+                          className="text-gray text-lg w-full h-full py-3 focus:outline-none bg-yellow-300 hover:bg-yellow-400"
+                          onClick={() => {
+                            if (productsInOrder?.length && !orderSelected) {
+                              console.log("se crea uno nuevo", orderSelected);
+                              handleCreateAndCleanOrder();
+                            } else {
+                              updateOrderSelected(false); //TODO: cuadno es uan orden creda anterioirmente
+                            }
+                            setIsEditOrder(false);
+                            setIsChecked(false);
+                          }}
+                        >
+                          Pendiente
+                          <FontAwesomeIcon
+                            icon={faMoneyBill}
+                            color="black"
+                            className="ml-2"
+                          />
+                        </button>
+                      </div>
+                      <div className="flex-grow">
+                        <button
+                          className="text-white text-lg w-full h-full py-3 focus:outline-none bg-cyan-500 hover:bg-cyan-600"
+                          onClick={openModal}
+                        >
+                          Pagar
+                        </button>
+                      </div>
+                    </div>
+                    {/* {CALCULADORA} */}
+                    <div className="grid grid-cols-4 gap-0 grid-rows-4 w-3/5">
+                      {buttonsData.map((number) => (
+                        <button
+                          key={number.id}
+                          onClick={() => {
+                            if (number.value === "borrar") {
+                              updateProductOrder(
+                                productSelected.id,
+                                productSelected
+                              );
+                            } else {
+                              // handleChageQuantityProduct(number);
+                            }
+                          }}
+                          className="bg-white text-gray p-3 hover:bg-gray-300 focus:outline-none border border-solid border-gray-500"
+                        >
+                          {number.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Contenedor principal para productos (Ocupa todo el espacio disponible) */}
+            {/* Contenedor principal para productos (Ocupa todo el espacio disponible) */}
 
-          <div className="flex-1 overflow-y-auto">
-            <div className="w-full bg-cyan-400 h-12 p-2 flex items-center overflow-hidden sticky top-0">
-              <div className="flex w-full items-center">
-                <FontAwesomeIcon
-                  icon={faHouse}
-                  size="2x"
-                  onClick={() => handleChangeCategory("")}
-                  className="cursor-pointer"
-                />
-
+            <div className="flex-1 overflow-y-auto">
+              <div className="w-full bg-cyan-400 h-12 p-2 flex items-center overflow-hidden sticky top-0">
                 <div className="flex w-full items-center">
-                  {/* {categorias} */}
-                  <div className="flex w-3/4 overflow-x-auto">
-                    {categoriesList.map((categoria, index) => (
-                      <button
-                        className="text-sm font-semibold ml-3 hover:bg-cyan-300 bg-none rounded truncate p-[0.3rem]"
-                        onClick={() => handleChangeCategory(categoria)}
-                        key={index + 1}
-                      >
-                        {categoria}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {/* {BUSCADOR} */}
-                <div className="flex-shrink-0 w-1/4">
-                  <button className="text-sm font-semibold bg-white shadow rounded-3xl truncate w-full h-9 flex">
-                    <div className="rounded-full bg-cyan-500 text-white w-6 left-2 relative mt-2">
-                      <FontAwesomeIcon icon={faMagnifyingGlass} />
+                  <FontAwesomeIcon
+                    icon={faHouse}
+                    size="2x"
+                    onClick={() => handleChangeCategory("")}
+                    className="cursor-pointer"
+                  />
+
+                  <div className="flex w-full items-center">
+                    {/* {categorias} */}
+                    <div className="flex w-3/4 overflow-x-auto">
+                      {categoriesList.map((categoria, index) => (
+                        <button
+                          className="text-sm font-semibold ml-3 hover:bg-cyan-300 bg-none rounded truncate p-[0.3rem]"
+                          onClick={() => handleChangeCategory(categoria)}
+                          key={index + 1}
+                        >
+                          {categoria}
+                        </button>
+                      ))}
                     </div>
-                    <input
-                      type="text"
-                      value={searchTerm}
-                      readOnly
-                      onClick={() => setShowKeyboard(!showKeyboard)}
-                      className="w-full mr-2 text-left bg-none px-2 focus:outline-none text-gray-800 mt-2 ml-1 truncate"
-                      placeholder="Buscar producto..."
-                    />
-                  </button>
+                  </div>
+                  {/* {BUSCADOR} */}
+                  <div className="flex-shrink-0 w-1/4">
+                    <button className="text-sm font-semibold bg-white shadow rounded-3xl truncate w-full h-9 flex">
+                      <div className="rounded-full bg-cyan-500 text-white w-6 left-2 relative mt-2">
+                        <FontAwesomeIcon icon={faMagnifyingGlass} />
+                      </div>
+                      <input
+                        type="text"
+                        value={searchTerm}
+                        readOnly
+                        onClick={() => setShowKeyboard(!showKeyboard)}
+                        className="w-full mr-2 text-left bg-none px-2 focus:outline-none text-gray-800 mt-2 ml-1 truncate"
+                        placeholder="Buscar producto..."
+                      />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* {LISTA DE PRODUCTOS} */}
-            <div className="grid grid-cols-4 gap-2 pb-2 text-gray-700 p-2">
-              {filteredProducts.map((producto) => (
-                <div
-                  key={producto.id}
-                  role="button"
-                  onClick={() => {
-                    addProductOrder(producto);
-                    setProductSelected(producto);
-                  }}
-                  className="cursor-pointer transition-shadow overflow-hidden rounded-2xl bg-white shadow hover:shadow-lg"
-                >
-                  <ImageComponent src={producto.image} />
-                  <div className="flex flex-col pb-3 px-3 text-sm justify-start text-left">
-                    <p className="flex-grow mr-1">{producto.name}</p>
-                    <p className="nowrap font-bold text-cyan-500">
-                      $ {new Intl.NumberFormat().format(producto.price)}
-                    </p>
+              {/* {LISTA DE PRODUCTOS} */}
+              <div className="grid grid-cols-4 gap-2 pb-2 text-gray-700 p-2">
+                {filteredProducts.map((producto) => (
+                  <div
+                    key={producto.id}
+                    role="button"
+                    onClick={() => {
+                      addProductOrder(producto);
+                      setProductSelected(producto);
+                    }}
+                    className="cursor-pointer transition-shadow overflow-hidden rounded-2xl bg-white shadow hover:shadow-lg"
+                  >
+                    <ImageComponent src={producto.image} />
+                    <div className="flex flex-col pb-3 px-3 text-sm justify-start text-left">
+                      <p className="flex-grow mr-1">{producto.name}</p>
+                      <p className="nowrap font-bold text-cyan-500">
+                        $ {new Intl.NumberFormat().format(producto.price)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {showKeyboard && <OnScreenKeyboard onKeyPress={handleKeyPress} />}
+            </div>
+          </div>
+        )}
+
+        {/* {Fin Modulo de venta} */}
+
+        {/* {Modulo de venta desde Mobile} */}
+        {isMobile && (
+          <div
+            className={`${pageView === "sales" ? "flex h-screen" : "hidden"}`}
+          >
+            {/* Left Bar */}
+            {!isPaymentView ? (
+              <div className="w-full">
+                <div className="bg-white flex flex-col h-full shadow text-blue-gray-800">
+                  <div className="flex flex-col overflow-auto">
+                    <div className="overflow-y-auto">
+                      <div className="w-full bg-cyan-400 h-12 p-2 flex items-center overflow-hidden sticky top-0 text-white">
+                        <div className="flex w-full items-center overflow-x-auto">
+                          <FontAwesomeIcon
+                            icon={faHouse}
+                            size="2x"
+                            onClick={() => handleChangeCategory("")}
+                            className="cursor-pointer"
+                          />
+
+                          <div className="flex items-center">
+                            <div className="flex whitespace-nowrap overflow-x-auto">
+                              {categoriesList.map((categoria, index) => (
+                                <button
+                                  className="text-sm font-semibold truncate hover:bg-cyan-300 bg-none rounded px-2 mr-2"
+                                  onClick={() =>
+                                    handleChangeCategory(categoria)
+                                  }
+                                  key={index}
+                                >
+                                  {categoria}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex-1 w-full overflow-auto border-t-2 flex-col mb-[120px]">
+                      <div className="grid grid-cols-3 gap-2 pb-2 text-gray-700 p-2">
+                        {filteredProducts.map((producto) => (
+                          <div
+                            key={producto.id}
+                            role="button"
+                            onClick={() => {
+                              addProductOrder(producto);
+                              setProductSelected(producto);
+                            }}
+                            className="cursor-pointer transition-shadow overflow-hidden rounded-2xl bg-white shadow hover:shadow-lg"
+                          >
+                            <ImageComponent src={producto.image} />
+                            <div className="flex flex-col pb-3 px-3 text-sm justify-start text-left">
+                              <p className="flex-grow mr-1">{producto.name}</p>
+                              <p className="nowrap font-bold text-cyan-500">
+                                ${" "}
+                                {new Intl.NumberFormat().format(producto.price)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex fixed bottom-0 left-0 w-full flex-col bg-white">
+                      <div className="h-auto w-full text-center pb-1 px-4 ">
+                        <div className="flex text-lg font-semibold text-blue-gray-700">
+                          <input
+                            type="text"
+                            ref={inputRef}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full mr-2 text-left bg-none focus:outline-none text-gray-800 mt-2"
+                            placeholder="Buscar producto..."
+                          />
+                        </div>
+                      </div>
+
+                      <div className="h-auto w-full text-center pb-1 px-4">
+                        <div className="flex text-lg font-semibold text-blue-gray-700">
+                          <div>TOTAL</div>
+                          <div className="text-right w-full font-bold">
+                            ${new Intl.NumberFormat().format(calculateTotal())}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col h-full w-full">
+                        <div className="h-auto flex">
+                          <button
+                            className="text-white font-bold text-lg h-full py-3 focus:outline-none bg-cyan-500 hover:bg-cyan-600 w-3/4"
+                            onClick={() => setIsPaymentView(true)}
+                          >
+                            Pago
+                          </button>
+                          <button
+                            className="text-white font-bold text-lg w-1/4 h-full py-3 focus:outline-none bg-violet-400 hover:bg-violet-600"
+                            onClick={() => handleButtonClick()}
+                          >
+                            <FontAwesomeIcon icon={faMagnifyingGlass} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className="w-full">
+                <div className="bg-white flex flex-col h-full shadow text-blue-gray-800">
+                  <div className="flex-1 flex flex-col overflow-auto">
+                    {productsInOrder.length ? (
+                      <div className="flex-1 w-full overflow-auto border-t-2">
+                        <Cart
+                          cart={productsInOrder}
+                          setProduct={setProductSelected}
+                          productSelected={productSelected}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex-1 w-full p-4 opacity-25 flex flex-col flex-wrap content-center justify-center">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-16 inline-block"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                          />
+                        </svg>
+                        <p>CARRITO VACIO</p>
+                      </div>
+                    )}
 
-            {showKeyboard && <OnScreenKeyboard onKeyPress={handleKeyPress} />}
+                    <div
+                      className="h-auto w-20 text-center p-1 bg-cyan-500 rounded-r-xl shadow-lg mb-1"
+                      onClick={() => setIsPaymentView(false)}
+                    >
+                      <div className="text-sm font-semibold text-white">
+                        <div>Volver</div>
+                      </div>
+                    </div>
+
+                    <div className="h-auto w-full text-center pb-1 px-4">
+                      <div className="flex text-lg font-semibold text-blue-gray-700">
+                        <div>TOTAL</div>
+                        <div className="text-right w-full font-bold">
+                          ${new Intl.NumberFormat().format(calculateTotal())}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex">
+                      <div className="flex flex-col h-full w-2/5">
+                        <div className="h-auto">
+                          <button
+                            className="text-white text-lg w-full h-full py-3 focus:outline-none bg-gray-500 hover:bg-gray-600"
+                            onClick={() => setModalCockIsOpen(!modalCockIsOpen)}
+                          >
+                            M. Cocina <FontAwesomeIcon icon={faUtensils} />
+                          </button>
+                        </div>
+                        <div className="h-auto">
+                          <button
+                            className="text-gray text-lg w-full h-full py-3 focus:outline-none bg-yellow-300 hover:bg-yellow-400"
+                            onClick={() => {
+                              if (productsInOrder?.length && !orderSelected) {
+                                console.log("se crea uno nuevo", orderSelected);
+                                handleCreateAndCleanOrder();
+                              } else {
+                                updateOrderSelected(false); //TODO: cuadno es uan orden creda anterioirmente
+                              }
+                              setIsEditOrder(false);
+                              setIsChecked(false);
+                            }}
+                          >
+                            Pendiente
+                            <FontAwesomeIcon
+                              icon={faMoneyBill}
+                              color="black"
+                              className="ml-2"
+                            />
+                          </button>
+                        </div>
+                        <div className="flex-grow">
+                          <button
+                            className="text-white text-lg w-full h-full py-3 focus:outline-none bg-cyan-500 hover:bg-cyan-600"
+                            onClick={openModal}
+                          >
+                            Pagar
+                          </button>
+                        </div>
+                      </div>
+                      {/* {CALCULADORA} */}
+                      <div className="grid grid-cols-4 gap-0 grid-rows-4 w-3/5">
+                        {buttonsData.map((number) => (
+                          <button
+                            key={number.id}
+                            onClick={() => {
+                              if (number.value === "borrar") {
+                                updateProductOrder(
+                                  productSelected.id,
+                                  productSelected
+                                );
+                              } else if (
+                                typeof number.value === "number" &&
+                                (number.value as number) > 0 &&
+                                (number.value as number) < 10
+                              ) {
+                                addProductOrder(productSelected, number.value);
+                                // handleChageQuantityProduct(number);
+                              }
+                            }}
+                            className="bg-white text-gray p-3 hover:bg-gray-300 focus:outline-none border border-solid border-gray-500"
+                          >
+                            {number.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* <ReceiptModal cart={ejemploDeCarrito}/> */}
-        </div>
-        {/* {Fin Modulo de venta} */}
+        )}
 
         {/* {Modulo de lista de ordenes} */}
         <div
@@ -839,37 +1113,32 @@ function App() {
         </div>
 
         <Modal isOpen={modalIsOpen} onClose={closeModal}>
-          <div className="w-[55vw] h-auto text-gray-700">
+          <div className="w-[85vw] h-auto text-gray-700 max-w-[100%]">
+            <div className="flex w-full">
+              <span className="mr-2">Valor Ingresado</span>
+              <span className="text-red-500 font-bold">
+                ${new Intl.NumberFormat().format(Number(valueInPayment))}
+              </span>
+            </div>
+            <div className="w-full flex font-normal text-gray-500">
+              <span className="mr-2">Total Venta</span>
+              <span
+                className={`${
+                  Number(valueInPayment) >=
+                  (!!orderSelected ? orderSelected?.total : calculateTotal())
+                    ? "text-green-600 font-semibold"
+                    : "text-gray-500"
+                }`}
+              >
+                $
+                {new Intl.NumberFormat().format(
+                  calculateTotal() || orderSelected?.total
+                )}
+              </span>
+            </div>
             {/* <h2 className="text-lg font-bold mb-2">Realizar Pago</h2> */}
-            <div className="w-full p-2">
+            <div className="w-full overflow-auto p-2">
               <div className="flex text-lg font-semibold text-blue-gray-700">
-                <div className="w-full">
-                  <div className="flex w-full">
-                    <span className="mr-2">Valor Ingresado</span>
-                    <span className="text-red-500">
-                      ${new Intl.NumberFormat().format(Number(valueInPayment))}
-                    </span>
-                  </div>
-                  <div className="w-full flex font-normal text-gray-500">
-                    <span className="mr-2">Total Venta</span>
-                    <span
-                      className={`${
-                        Number(valueInPayment) >=
-                        (!!orderSelected
-                          ? orderSelected?.total
-                          : calculateTotal())
-                          ? "text-green-600 font-semibold"
-                          : "text-gray-500"
-                      }`}
-                    >
-                      $
-                      {new Intl.NumberFormat().format(
-                        calculateTotal() || orderSelected?.total
-                      )}
-                    </span>
-                  </div>
-                </div>
-
                 <div className="text-right w-full">
                   <span className="mr-2">Cambio</span>
                   <span className="text-blue-500">
@@ -958,7 +1227,6 @@ function App() {
         >
           <div
             className="w-96 bg-white overflow-x-auto z-10 text-gray-500 h-auto max-h-[80vh]"
-            ref={printAreaRef}
             id="print-area"
           >
             <div className="text-left w-full text-sm p-4 overflow-auto">
@@ -1123,7 +1391,6 @@ function App() {
         >
           <div
             className="w-96 bg-white overflow-x-auto z-10 text-gray-500 h-auto max-h-[80vh]"
-            ref={printAreaRef}
             id="print-area"
           >
             <div className="bg-white p-6 rounded-md shadow-md w-96">

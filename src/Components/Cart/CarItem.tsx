@@ -3,14 +3,13 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useRef, useState } from "react";
 import { faNoteSticky } from "@fortawesome/free-solid-svg-icons";
 import { useProductContext } from "../../context/ProductContext/ProductContext";
-const CarItem = ({ item, productSelected, isCreated }: any) => {
+const CarItem = ({ item, productSelected, isCreated, setProduct }: any) => {
   const selectedProductRef = useRef<any>(null);
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [noteTexts, setNoteTexts] = useState(
     Array.from({ length: item?.quantity || 0 }, () => "")
   );
-  const { updateProductOrder, flavorsList } =
-    useProductContext();
+  const { updateProductOrder, flavorsList } = useProductContext();
 
   const handleNoteChange = (index: any, value: string) => {
     const newNoteTexts = [...noteTexts];
@@ -85,9 +84,8 @@ const CarItem = ({ item, productSelected, isCreated }: any) => {
 
   console.log("noteTExts", noteTexts);
 
-
   return (
-    <div key={item.id}>
+    <div key={item.id} onClick={() => setProduct(item)}>
       <div
         key={item.id}
         ref={productSelected?.id === item?.id ? selectedProductRef : null}
@@ -120,7 +118,7 @@ const CarItem = ({ item, productSelected, isCreated }: any) => {
           </p>
         </div>
 
-        {noteTexts.length > 0 && noteTexts[0] !== '' ? (
+        {noteTexts.length > 0 && noteTexts[0] !== "" ? (
           <div className="flex">
             <p className="text-black font-semibold text-sm ml-2">Nota: </p>
             <p className="text-gra-400 font-normal text-sm ml-2">
