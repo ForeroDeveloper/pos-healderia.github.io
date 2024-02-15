@@ -188,7 +188,7 @@ function App() {
     const currentDate = new Date();
     const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1}-${currentDate.getFullYear()}`;
     try {
-      console.log('productsInOrder', productsInOrder);
+      console.log('productsInOrder', productsInOrder, isChecked);
 
       const ordersRef = ref(realtimeDb, `orders/${formattedDate}`);
       const newOrderRef = push(ordersRef);
@@ -212,6 +212,9 @@ function App() {
       };
       set(newOrderRef, newOrderToDb);
       setValueInPayment('');
+      setIsChecked(false);
+      setAddress("");
+      setPhoneClient("");
       console.log('Datos registrados en Realtime Database');
     } catch (error) {
       console.error('Error al registrar en Realtime Database:', error);
@@ -269,11 +272,6 @@ function App() {
       setProductSelected(productsInOrder[productsInOrder.length - 1]);
     }
   }, [productSelected, productsInOrder]);
-  useEffect(() => {
-    if (orderSelected) {
-      setIsChecked(orderSelected?.isDelivery);
-    }
-  }, [orderSelected]);
 
   const calculateTotal = () => {
     const total = productsInOrder.reduce((acumulador, producto) => {
@@ -583,8 +581,10 @@ function App() {
                         <button
                           className="text-gray text-lg w-full h-full py-3 focus:outline-none bg-yellow-300 hover:bg-yellow-400"
                           onClick={() => {
+                            if(isChecked){
+                              setIsChecked(false);
+                            }
                             if (productsInOrder?.length && !orderSelected) {
-                              console.log('se crea uno nuevo', orderSelected);
                               handleCreateAndCleanOrder();
                             } else {
                               updateOrderSelected(false); //TODO: cuadno es uan orden creda anterioirmente
@@ -1019,6 +1019,7 @@ function App() {
                               return;
                             }
                             setProductsInOrderByDbHandler(orderSelected?.products);
+                            setIsChecked(orderSelected?.isDelivery)
                             setIsEditOrder(true);
                             setPageView('sales');
                           }}
@@ -1198,7 +1199,9 @@ function App() {
                               <td className="py-2 text-left">
                                 <span>{item.name}</span>
                                 <br />
-                                {/* {item?.note && <small>Nota: {item.note}</small>} */}
+                                {Object.values(item?.notes || []).map((note: any, index) => (
+                                <small> <b>{index + 1}:</b> {note.note}, </small>
+                              ))}
                               </td>
                               <td className="py-2 text-center">
                                 {item?.initialQuantity ? item.quantity - item?.initialQuantity : item.quantity}
@@ -1211,10 +1214,9 @@ function App() {
                             <td className="py-2 text-left">
                               <span>{item.name}</span>
                               <br />
-                              {item?.note && <small>Nota: {item.note}</small>}
-
-                              {/* <br />
-                          <small>Sabores: Chocolate, Mandarina</small> */}
+                              {Object.values(item?.notes || []).map((note: any, index) => (
+                                <small> <b>{index + 1}:</b> {note.note}, </small>
+                              ))}
                             </td>
                             <td className="py-2 text-center">{item.quantity}</td>
                           </tr>
