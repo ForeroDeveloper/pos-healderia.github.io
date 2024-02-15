@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { useEffect, useMemo, useRef, useState } from "react";
-import "./App.css";
-import Cart from "./Components/Cart/Cart";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import './App.css';
+import Cart from './Components/Cart/Cart';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCartShopping,
   faHouse,
@@ -15,19 +15,19 @@ import {
   faMagnifyingGlass,
   faMoneyBill,
   faTrash,
-} from "@fortawesome/free-solid-svg-icons";
-import Modal from "./Components/Modal/Modal";
-import TableOrders from "./Components/TableOrders/TableOrders";
-import CsvUploader from "./Components/CsvUploader/CsvUploader";
-import TableInventory from "./Components/TableInventory/TableInventory";
-import { useProductContext } from "./context/ProductContext/ProductContext";
+} from '@fortawesome/free-solid-svg-icons';
+import Modal from './Components/Modal/Modal';
+import TableOrders from './Components/TableOrders/TableOrders';
+import CsvUploader from './Components/CsvUploader/CsvUploader';
+import TableInventory from './Components/TableInventory/TableInventory';
+import { useProductContext } from './context/ProductContext/ProductContext';
 // @ts-expect-error
-import { v4 as uuidv4 } from "uuid";
-import { ref, set, push, onValue, remove, update } from "firebase/database";
+import { v4 as uuidv4 } from 'uuid';
+import { ref, set, push, onValue, remove, update } from 'firebase/database';
 // @ts-expect-error
-import { db, realtimeDb } from "../src/config/firestore.js";
-import ImageComponent from "./Components/ImageComponent/ImageComponent.js";
-import { isMobile, isTablet, isDesktop } from "react-device-detect";
+import { db, realtimeDb } from '../src/config/firestore.js';
+import ImageComponent from './Components/ImageComponent/ImageComponent.js';
+import { isMobile, isTablet, isDesktop } from 'react-device-detect';
 
 declare global {
   interface Window {
@@ -37,10 +37,10 @@ declare global {
 
 const OnScreenKeyboard = ({ onKeyPress }: any) => {
   const keyboardRows = [
-    ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "Del"],
-    ["A", "S", "D", "F", "G", "H", "J", "K", "L", "Ñ", "Enter"],
-    ["Z", "X", "C", "V", "B", "N", "M", "!", "?", ";", "."],
-    ["Espacio"],
+    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'Del'],
+    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ñ', 'Enter'],
+    ['Z', 'X', 'C', 'V', 'B', 'N', 'M', '!', '?', ';', '.'],
+    ['Espacio'],
   ];
 
   const handleKeyPress = (key: any) => {
@@ -56,14 +56,13 @@ const OnScreenKeyboard = ({ onKeyPress }: any) => {
               <button
                 key={key}
                 onClick={() => handleKeyPress(key)}
-                className={`m-1 p-2 bg-gray-300 rounded ${key === "Espacio" ? "w-[50%] mx-auto" : "w-[5.2rem]"
-                  } h-10`}
+                className={`m-1 p-2 bg-gray-300 rounded ${key === 'Espacio' ? 'w-[50%] mx-auto' : 'w-[5.2rem]'} h-10`}
               >
-                {key === "Del" ? (
+                {key === 'Del' ? (
                   <span>
                     <FontAwesomeIcon icon={faDeleteLeft} color="red" />
                   </span>
-                ) : key === "Enter" ? (
+                ) : key === 'Enter' ? (
                   <FontAwesomeIcon icon={faRightToBracket} color="black" />
                 ) : (
                   key
@@ -79,18 +78,18 @@ const OnScreenKeyboard = ({ onKeyPress }: any) => {
 function App() {
   // const [inputValue, setInputValue] = useState("");
   const [productSelected, setProductSelected] = useState<any>({});
-  const [valueInPayment, setValueInPayment] = useState<string>("");
-  const [address, setAddress] = useState<string>("");
-  const [phoneClient, setPhoneClient] = useState<string>("");
+  const [valueInPayment, setValueInPayment] = useState<string>('');
+  const [address, setAddress] = useState<string>('');
+  const [phoneClient, setPhoneClient] = useState<string>('');
   // const [valueInProduct, setValueInProduct] = useState<string>("");
   const [showKeyboard, setShowKeyboard] = useState(false);
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [openModalFlavors, setOpenModalFlavors] = useState(false);
   const [modalCockIsOpen, setModalCockIsOpen] = useState(false);
-  const [pageView, setPageView] = useState("sales");
+  const [pageView, setPageView] = useState('sales');
   const [isPaymentView, setIsPaymentView] = useState(false);
   const [categorySelected, setCategorySelected] = useState<string>();
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState<string>('');
   // const [productsBySearch, setProductsBySearch] = useState<any[]>([]);
   const [flavorsList, setFlavorsList] = useState<any[]>([]);
 
@@ -117,7 +116,7 @@ function App() {
   };
 
   const openModal = () => {
-    if (orderSelected?.orderStatus == "PAID") {
+    if (orderSelected?.orderStatus == 'PAID') {
       return;
     }
     setModalIsOpen(true);
@@ -125,60 +124,60 @@ function App() {
 
   const closeModal = () => {
     setModalIsOpen(false);
-    setValueInPayment("");
+    setValueInPayment('');
   };
 
   const buttonsData = [
-    { id: 1, label: "1", value: 1 },
-    { id: 2, label: "2", value: 2 },
-    { id: 3, label: "3", value: 3 },
-    { id: 15, label: "<--", value: "borrar" },
-    { id: 4, label: "4", value: 4 },
-    { id: 5, label: "5", value: 5 },
-    { id: 6, label: "6", value: 6 },
-    { id: 11, label: "%Des", value: "descuento" },
-    { id: 7, label: "7", value: 7 },
-    { id: 8, label: "8", value: 8 },
-    { id: 9, label: "9", value: 9 },
-    { id: 12, label: "Prec", value: "precio" },
-    { id: 13, label: "+/-", value: "restar" },
-    { id: 0, label: "0", value: 0 },
-    { id: 14, label: ",", value: "," },
-    { id: 10, label: "Can", value: "cantidad" },
+    { id: 1, label: '1', value: 1 },
+    { id: 2, label: '2', value: 2 },
+    { id: 3, label: '3', value: 3 },
+    { id: 15, label: '<--', value: 'borrar' },
+    { id: 4, label: '4', value: 4 },
+    { id: 5, label: '5', value: 5 },
+    { id: 6, label: '6', value: 6 },
+    { id: 11, label: '%Des', value: 'descuento' },
+    { id: 7, label: '7', value: 7 },
+    { id: 8, label: '8', value: 8 },
+    { id: 9, label: '9', value: 9 },
+    { id: 12, label: 'Prec', value: 'precio' },
+    { id: 13, label: '+/-', value: 'restar' },
+    { id: 0, label: '0', value: 0 },
+    { id: 14, label: ',', value: ',' },
+    { id: 10, label: 'Can', value: 'cantidad' },
   ];
   const buttonsDataModal = [
-    { id: 1, label: "1", value: 1 },
-    { id: 2, label: "2", value: 2 },
-    { id: 3, label: "3", value: 3 },
-    { id: 11, label: "+500", value: 500 },
-    { id: 4, label: "4", value: 4 },
-    { id: 5, label: "5", value: 5 },
-    { id: 6, label: "6", value: 6 },
-    { id: 12, label: "+1.000", value: 1000 },
-    { id: 7, label: "7", value: 7 },
-    { id: 8, label: "8", value: 8 },
-    { id: 9, label: "9", value: 9 },
-    { id: 10, label: "+5.000", value: 5000 },
+    { id: 1, label: '1', value: 1 },
+    { id: 2, label: '2', value: 2 },
+    { id: 3, label: '3', value: 3 },
+    { id: 11, label: '+500', value: 500 },
+    { id: 4, label: '4', value: 4 },
+    { id: 5, label: '5', value: 5 },
+    { id: 6, label: '6', value: 6 },
+    { id: 12, label: '+1.000', value: 1000 },
+    { id: 7, label: '7', value: 7 },
+    { id: 8, label: '8', value: 8 },
+    { id: 9, label: '9', value: 9 },
+    { id: 10, label: '+5.000', value: 5000 },
 
-    { id: 13, label: "", value: "no-action" },
-    { id: 0, label: "0", value: 0 },
-    { id: 14, label: "", value: "no-action" },
-    { id: 15, label: "<--", value: "borrar" },
+    { id: 13, label: '', value: 'no-action' },
+    { id: 0, label: '0', value: 0 },
+    { id: 14, label: '', value: 'no-action' },
+    { id: 15, label: '<--', value: 'borrar' },
   ];
 
   const ordersStatus = [
-    { id: 3, label: "En Cocina", value: 3 },
-    { id: 2, label: "Finalizadas", value: 2 },
-    { id: 1, label: "Canceladas", value: 1 },
+    { id: 3, label: 'En Cocina', value: 3 },
+    { id: 2, label: 'Finalizadas', value: 2 },
+    { id: 1, label: 'Canceladas', value: 1 },
   ];
 
   const handleKeyPress = (key: any) => {
-    if (key === "Del") {
+    if (key === 'Del') {
       setSearchTerm((prev) => prev.slice(0, -1));
-    } else if (key == "Espacio") {
-      setSearchTerm((prev) => prev + " ");
-    } else if (key == "Enter") {
-      setSearchTerm("");
+    } else if (key == 'Espacio') {
+      setSearchTerm((prev) => prev + ' ');
+    } else if (key == 'Enter') {
+      setSearchTerm('');
       setShowKeyboard(false);
     } else {
       setSearchTerm((prev) => prev + key);
@@ -187,10 +186,9 @@ function App() {
 
   const handleCreateOrder = (isPayment: boolean = false): void => {
     const currentDate = new Date();
-    const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1
-      }-${currentDate.getFullYear()}`;
+    const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1}-${currentDate.getFullYear()}`;
     try {
-      console.log("productsInOrder", productsInOrder);
+      console.log('productsInOrder', productsInOrder);
 
       const ordersRef = ref(realtimeDb, `orders/${formattedDate}`);
       const newOrderRef = push(ordersRef);
@@ -206,17 +204,17 @@ function App() {
         })),
         total: Number(calculateTotal() + deliveryCost),
         isDelivery: isChecked,
-        orderStatus: isPayment ? "PAID" : "PENDING",
+        orderStatus: isPayment ? 'PAID' : 'PENDING',
         date: new Date().toLocaleString(undefined, { hour12: true }),
         addressClient: address,
         phoneClient,
         isPrint: false,
       };
       set(newOrderRef, newOrderToDb);
-      setValueInPayment("");
-      console.log("Datos registrados en Realtime Database");
+      setValueInPayment('');
+      console.log('Datos registrados en Realtime Database');
     } catch (error) {
-      console.error("Error al registrar en Realtime Database:", error);
+      console.error('Error al registrar en Realtime Database:', error);
     }
   };
 
@@ -233,8 +231,8 @@ function App() {
     let productsInOrder2 = productsInOrder.map((product) => {
       if (product?.notes) {
         const updatedNotes = Object?.values(product.notes || [])
-          .map((note: any) => (note !== "" ? `P${note.id}: ${note.note}` : ""))
-          .join(", ");
+          .map((note: any) => (note !== '' ? `P${note.id}: ${note.note}` : ''))
+          .join(', ');
         return { ...product, notes: updatedNotes };
       } else {
         return product;
@@ -263,16 +261,11 @@ function App() {
     console.log(`${arrayDataText}`);
 
     window?.Toaster?.postMessage(`${arrayDataText}`);
-    setValueInPayment("");
+    setValueInPayment('');
   };
 
   useEffect(() => {
-    if (
-      productsInOrder?.length > 0 &&
-      productsInOrder?.findIndex(
-        (products) => products?.id === productSelected?.id
-      ) === -1
-    ) {
+    if (productsInOrder?.length > 0 && productsInOrder?.findIndex((products) => products?.id === productSelected?.id) === -1) {
       setProductSelected(productsInOrder[productsInOrder.length - 1]);
     }
   }, [productSelected, productsInOrder]);
@@ -300,14 +293,13 @@ function App() {
 
       const nameFilter = productNameLowerCase.includes(searchTermLowerCase);
 
-      const categoryFilter =
-        !categorySelected || product.category === categorySelected;
+      const categoryFilter = !categorySelected || product.category === categorySelected;
 
       return searchTerm.length > 0 ? nameFilter : categoryFilter;
     });
   }, [searchTerm, categorySelected, productList]);
 
-  const [inputFlavors, setInputFlavors] = useState("");
+  const [inputFlavors, setInputFlavors] = useState('');
 
   const handleInputChange = (e: any) => {
     setInputFlavors(e.target.value);
@@ -325,10 +317,10 @@ function App() {
       set(newFlavorRef, newFlavor);
       setFlavorsList((prev) => [...prev, newFlavor]);
       setFlavorsInContext([...flavorsList, newFlavor]);
-      setInputFlavors("");
-      console.log("Datos registrados en Realtime Database");
+      setInputFlavors('');
+      console.log('Datos registrados en Realtime Database');
     } catch (error) {
-      console.error("Error al registrar en Realtime Database:", error);
+      console.error('Error al registrar en Realtime Database:', error);
     }
   };
   const handleDelete = (id: string) => {
@@ -337,13 +329,12 @@ function App() {
       remove(flavorRef);
       setFlavorsList((prev) => prev.filter((flavor) => flavor.id !== id));
     } catch (error) {
-      console.error("Error al eliminar en Realtime Database:", error);
+      console.error('Error al eliminar en Realtime Database:', error);
     }
   };
   const handleDeleteOrder = (id: string) => {
     const currentDate = new Date();
-    const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1
-      }-${currentDate.getFullYear()}`;
+    const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1}-${currentDate.getFullYear()}`;
     try {
       const orderRef = ref(realtimeDb, `orders/${formattedDate}/${id}`);
       remove(orderRef);
@@ -353,12 +344,12 @@ function App() {
       }
       setOrderSelected(null);
     } catch (error) {
-      console.error("Error al eliminar en Realtime Database:", error);
+      console.error('Error al eliminar en Realtime Database:', error);
     }
   };
 
   useEffect(() => {
-    const starCountRef = ref(realtimeDb, "flavors/");
+    const starCountRef = ref(realtimeDb, 'flavors/');
     onValue(
       starCountRef,
       (snapshot) => {
@@ -370,15 +361,14 @@ function App() {
         setFlavorsList(flavors);
         setFlavorsInContext(flavors);
       },
-      { onlyOnce: true }
+      { onlyOnce: true },
     );
   }, []);
   const [orderByDb, setOrdersByDb] = useState<any[]>([]);
 
   useEffect(() => {
     const currentDate = new Date();
-    const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1
-      }-${currentDate.getFullYear()}`;
+    const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1}-${currentDate.getFullYear()}`;
     const starCountRef = ref(realtimeDb, `orders/${formattedDate}`);
     onValue(
       starCountRef,
@@ -390,7 +380,7 @@ function App() {
         }));
         setOrdersByDb(orders);
       },
-      { onlyOnce: false }
+      { onlyOnce: false },
     );
   }, []);
 
@@ -403,16 +393,10 @@ function App() {
 
   const updateOrderSelected = async (isPaid: boolean = true) => {
     const currentDate = new Date();
-    const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1
-      }-${currentDate.getFullYear()}`;
-    const productRef = ref(
-      realtimeDb,
-      `orders/${formattedDate}/${orderSelected?.id}`
-    );
+    const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1}-${currentDate.getFullYear()}`;
+    const productRef = ref(realtimeDb, `orders/${formattedDate}/${orderSelected?.id}`);
     try {
-      const productsMap = productsInOrder?.length
-        ? productsInOrder
-        : orderSelected?.products;
+      const productsMap = productsInOrder?.length ? productsInOrder : orderSelected?.products;
 
       const deliveryCost = isChecked ? 1500 : 0;
 
@@ -423,7 +407,7 @@ function App() {
             quantity: product?.quantity,
             initialQuantity: product?.quantity,
           })),
-          orderStatus: isPaid ? "PAID" : "PENDING",
+          orderStatus: isPaid ? 'PAID' : 'PENDING',
           total: Number(calculateTotalUpdate(productsMap) + deliveryCost),
         });
       } else {
@@ -434,12 +418,9 @@ function App() {
       setProductSelected(null);
       setModalCockIsOpen(false);
 
-      console.log("Producto actualizado correctamente en Realtime Database");
+      console.log('Producto actualizado correctamente en Realtime Database');
     } catch (error) {
-      console.error(
-        "Error al actualizar el producto en Realtime Database:",
-        error
-      );
+      console.error('Error al actualizar el producto en Realtime Database:', error);
     }
   };
 
@@ -454,45 +435,43 @@ function App() {
     setIsFocused(!isFocused);
   };
 
-  console.log(productsInOrder, 'productList')
+  console.log(productsInOrder, 'productList');
 
   return (
     <>
       <div className="h-screen hide-print">
         {/* {Header con opciones} */}
-        {isDesktop &&
-          (
-            <div className="w-full bg-cyan-800 h-11 py-2 pr-1 flex justify-end">
-              <button
-                className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md mr-3"
-                onClick={() => setOpenModalFlavors(true)}
-              >
-                Sabores de Helado <FontAwesomeIcon icon={faIceCream} />
-              </button>
-              <button
-                className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md mr-3"
-                onClick={() => setPageView("inventory")}
-              >
-                Inventario <FontAwesomeIcon icon={faBox} />
-              </button>
-              <button
-                className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md"
-                onClick={() => setPageView("orders")}
-              >
-                Ordenes <FontAwesomeIcon icon={faUtensils} />
-              </button>
-              <button
-                className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md ml-3"
-                onClick={() => {
-                  setPageView("sales");
-                  setOrderSelected(null);
-                }}
-              >
-                Realizar venta <FontAwesomeIcon icon={faCartShopping} />
-              </button>
-            </div>
-          )
-        }
+        {isDesktop && (
+          <div className="w-full bg-cyan-800 h-11 py-2 pr-1 flex justify-end">
+            <button
+              className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md mr-3"
+              onClick={() => setOpenModalFlavors(true)}
+            >
+              Sabores de Helado <FontAwesomeIcon icon={faIceCream} />
+            </button>
+            <button
+              className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md mr-3"
+              onClick={() => setPageView('inventory')}
+            >
+              Inventario <FontAwesomeIcon icon={faBox} />
+            </button>
+            <button
+              className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md"
+              onClick={() => setPageView('orders')}
+            >
+              Ordenes <FontAwesomeIcon icon={faUtensils} />
+            </button>
+            <button
+              className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md ml-3"
+              onClick={() => {
+                setPageView('sales');
+                setOrderSelected(null);
+              }}
+            >
+              Realizar venta <FontAwesomeIcon icon={faCartShopping} />
+            </button>
+          </div>
+        )}
         {isDesktop ||
           (isTablet && (
             <div className="w-full bg-cyan-800 h-11 py-2 pr-1 flex justify-end">
@@ -504,20 +483,20 @@ function App() {
               </button>
               <button
                 className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md mr-3"
-                onClick={() => setPageView("inventory")}
+                onClick={() => setPageView('inventory')}
               >
                 Inventario <FontAwesomeIcon icon={faBox} />
               </button>
               <button
                 className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md"
-                onClick={() => setPageView("orders")}
+                onClick={() => setPageView('orders')}
               >
                 Ordenes <FontAwesomeIcon icon={faUtensils} />
               </button>
               <button
                 className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md ml-3"
                 onClick={() => {
-                  setPageView("sales");
+                  setPageView('sales');
                   setOrderSelected(null);
                 }}
               >
@@ -537,14 +516,14 @@ function App() {
 
             <button
               className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md"
-              onClick={() => setPageView("orders")}
+              onClick={() => setPageView('orders')}
             >
               Ordenes <FontAwesomeIcon icon={faUtensils} />
             </button>
             <button
               className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md ml-3"
               onClick={() => {
-                setPageView("sales");
+                setPageView('sales');
                 setOrderSelected(null);
               }}
             >
@@ -555,19 +534,14 @@ function App() {
 
         {/* {Modulo de venta} */}
         {isDesktop && (
-          <div
-            className={`${pageView === "sales" ? "flex h-screen" : "hidden"}`}
-          >
+          <div className={`${pageView === 'sales' ? 'flex h-screen' : 'hidden'}`}>
             {/* Left Bar */}
             <div className="lg:w-[40%]">
               <div className="bg-white flex flex-col h-full shadow text-blue-gray-800">
                 <div className="flex-1 flex flex-col overflow-auto">
                   {productsInOrder.length ? (
                     <div className="flex-1 w-full overflow-auto border-t-2">
-                      <Cart
-                        cart={productsInOrder}
-                        productSelected={productSelected}
-                      />
+                      <Cart cart={productsInOrder} productSelected={productSelected} />
                     </div>
                   ) : (
                     <div className="flex-1 w-full p-4 opacity-25 flex flex-col flex-wrap content-center justify-center">
@@ -592,9 +566,7 @@ function App() {
                   <div className="h-auto w-full text-center pb-1 px-4">
                     <div className="flex text-lg font-semibold text-blue-gray-700">
                       <div>TOTAL</div>
-                      <div className="text-right w-full font-bold">
-                        ${new Intl.NumberFormat().format(calculateTotal())}
-                      </div>
+                      <div className="text-right w-full font-bold">${new Intl.NumberFormat().format(calculateTotal())}</div>
                     </div>
                   </div>
 
@@ -613,7 +585,7 @@ function App() {
                           className="text-gray text-lg w-full h-full py-3 focus:outline-none bg-yellow-300 hover:bg-yellow-400"
                           onClick={() => {
                             if (productsInOrder?.length && !orderSelected) {
-                              console.log("se crea uno nuevo", orderSelected);
+                              console.log('se crea uno nuevo', orderSelected);
                               handleCreateAndCleanOrder();
                             } else {
                               updateOrderSelected(false); //TODO: cuadno es uan orden creda anterioirmente
@@ -623,11 +595,7 @@ function App() {
                           }}
                         >
                           Pendiente
-                          <FontAwesomeIcon
-                            icon={faMoneyBill}
-                            color="black"
-                            className="ml-2"
-                          />
+                          <FontAwesomeIcon icon={faMoneyBill} color="black" className="ml-2" />
                         </button>
                       </div>
                       <div className="flex-grow">
@@ -645,11 +613,8 @@ function App() {
                         <button
                           key={number.id}
                           onClick={() => {
-                            if (number.value === "borrar") {
-                              updateProductOrder(
-                                productSelected.id,
-                                productSelected
-                              );
+                            if (number.value === 'borrar') {
+                              updateProductOrder(productSelected.id, productSelected);
                             } else {
                               // handleChageQuantityProduct(number);
                             }
@@ -670,12 +635,7 @@ function App() {
             <div className="flex-1 overflow-y-auto">
               <div className="w-full bg-cyan-400 h-12 p-2 flex items-center overflow-hidden sticky top-0">
                 <div className="flex w-full items-center">
-                  <FontAwesomeIcon
-                    icon={faHouse}
-                    size="2x"
-                    onClick={() => handleChangeCategory("")}
-                    className="cursor-pointer"
-                  />
+                  <FontAwesomeIcon icon={faHouse} size="2x" onClick={() => handleChangeCategory('')} className="cursor-pointer" />
 
                   <div className="flex w-full items-center">
                     {/* {categorias} */}
@@ -705,7 +665,6 @@ function App() {
                           className="w-full mr-2 text-left bg-none px-2 focus:outline-none text-gray-800 mt-2 ml-1 truncate"
                           placeholder="Buscar producto..."
                         />
-
                       ) : (
                         <input
                           type="text"
@@ -724,33 +683,30 @@ function App() {
               {/* {LISTA DE PRODUCTOS} */}
               <div className="grid grid-cols-4 gap-2 pb-2 text-gray-700 p-2">
                 {filteredProducts.map((producto) => {
-                    const productInOrder = productsInOrder.find((product) => product.id === producto.id);
-                  return(
-                  <div
-                    key={producto.id}
-                    role="button"
-                    onClick={() => {
-                      addProductOrder(producto);
-                      setProductSelected(producto);
-                    }}
-                    className="cursor-pointer transition-shadow overflow-hidden rounded-2xl bg-white shadow hover:shadow-lg relative flex flex-col"
-                  >
-                    {productInOrder && (
-                      <span className="bg-blue-400 text-zinc-50 py-1 px-2 rounded-full text-xs absolute top-0 right-4 mt-2 -mr-1 font-bold">
-                        {productInOrder.quantity}
-                      </span>
-                    )}
-                <ImageComponent src={producto.image} />
-                    <div className="flex flex-col pb-3 px-3 text-sm justify-start text-left">
-                      <p className="flex-grow mr-1">{producto.name}</p>
-                      <p className="nowrap font-bold text-cyan-500">
-                        $ {new Intl.NumberFormat().format(producto.price)}
-                      </p>
+                  const productInOrder = productsInOrder.find((product) => product.id === producto.id);
+                  return (
+                    <div
+                      key={producto.id}
+                      role="button"
+                      onClick={() => {
+                        addProductOrder(producto);
+                        setProductSelected(producto);
+                      }}
+                      className="cursor-pointer transition-shadow overflow-hidden rounded-2xl bg-white shadow hover:shadow-lg relative flex flex-col"
+                    >
+                      {productInOrder && (
+                        <span className="bg-blue-400 text-zinc-50 py-1 px-2 rounded-full text-xs absolute top-0 right-4 mt-2 -mr-1 font-bold">
+                          {productInOrder.quantity}
+                        </span>
+                      )}
+                      <ImageComponent src={producto.image} />
+                      <div className="flex flex-col pb-3 px-3 text-sm justify-start text-left">
+                        <p className="flex-grow mr-1">{producto.name}</p>
+                        <p className="nowrap font-bold text-cyan-500">$ {new Intl.NumberFormat().format(producto.price)}</p>
+                      </div>
                     </div>
-                  </div>
-                );
-              })
-            }
+                  );
+                })}
               </div>
 
               {showKeyboard && <OnScreenKeyboard onKeyPress={handleKeyPress} />}
@@ -762,9 +718,7 @@ function App() {
 
         {/* {Modulo de venta desde Mobile} */}
         {isMobile && (
-          <div
-            className={`${pageView === "sales" ? "flex h-screen" : "hidden"}`}
-          >
+          <div className={`${pageView === 'sales' ? 'flex h-screen' : 'hidden'}`}>
             {/* Left Bar */}
             {!isPaymentView ? (
               <div className="w-full">
@@ -773,21 +727,14 @@ function App() {
                     <div className="overflow-y-auto">
                       <div className="w-full bg-cyan-400 h-12 p-2 flex items-center overflow-hidden sticky top-0 text-white">
                         <div className="flex w-full items-center overflow-x-auto">
-                          <FontAwesomeIcon
-                            icon={faHouse}
-                            size="2x"
-                            onClick={() => handleChangeCategory("")}
-                            className="cursor-pointer"
-                          />
+                          <FontAwesomeIcon icon={faHouse} size="2x" onClick={() => handleChangeCategory('')} className="cursor-pointer" />
 
                           <div className="flex items-center">
                             <div className="flex whitespace-nowrap overflow-x-auto">
                               {categoriesList.map((categoria, index) => (
                                 <button
                                   className="text-sm font-semibold truncate hover:bg-cyan-300 bg-none rounded px-2 mr-2"
-                                  onClick={() =>
-                                    handleChangeCategory(categoria)
-                                  }
+                                  onClick={() => handleChangeCategory(categoria)}
                                   key={index}
                                 >
                                   {categoria}
@@ -800,26 +747,31 @@ function App() {
                     </div>
                     <div className="flex-1 w-full overflow-auto border-t-2 flex-col mb-[120px]">
                       <div className="grid grid-cols-3 gap-2 pb-2 text-gray-700 p-2">
-                        {filteredProducts.map((producto) => (
-                          <div
-                            key={producto.id}
-                            role="button"
-                            onClick={() => {
-                              addProductOrder(producto);
-                              setProductSelected(producto);
-                            }}
-                            className="cursor-pointer transition-shadow overflow-hidden rounded-2xl bg-white shadow hover:shadow-lg"
-                          >
-                            <ImageComponent src={producto.image} />
-                            <div className="flex flex-col pb-3 px-3 text-sm justify-start text-left">
-                              <p className="flex-grow mr-1">{producto.name}</p>
-                              <p className="nowrap font-bold text-cyan-500">
-                                ${" "}
-                                {new Intl.NumberFormat().format(producto.price)}
-                              </p>
+                        {filteredProducts.map((producto) => {
+                          const productInOrder = productsInOrder.find((product) => product.id === producto.id);
+                          return (
+                            <div
+                              key={producto.id}
+                              role="button"
+                              onClick={() => {
+                                addProductOrder(producto);
+                                setProductSelected(producto);
+                              }}
+                              className="cursor-pointer transition-shadow overflow-hidden rounded-2xl bg-white shadow hover:shadow-lg relative flex flex-col"
+                            >
+                              {productInOrder && (
+                                <span className="bg-blue-400 text-zinc-50 py-1 px-2 rounded-full text-xs absolute top-0 right-4 mt-2 -mr-1 font-bold">
+                                  {productInOrder.quantity}
+                                </span>
+                              )}
+                              <ImageComponent src={producto.image} />
+                              <div className="flex flex-col pb-3 px-3 text-sm justify-start text-left">
+                                <p className="flex-grow mr-1">{producto.name}</p>
+                                <p className="nowrap font-bold text-cyan-500">$ {new Intl.NumberFormat().format(producto.price)}</p>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -840,9 +792,7 @@ function App() {
                       <div className="h-auto w-full text-center pb-1 px-4">
                         <div className="flex text-lg font-semibold text-blue-gray-700">
                           <div>TOTAL</div>
-                          <div className="text-right w-full font-bold">
-                            ${new Intl.NumberFormat().format(calculateTotal())}
-                          </div>
+                          <div className="text-right w-full font-bold">${new Intl.NumberFormat().format(calculateTotal())}</div>
                         </div>
                       </div>
                       <div className="flex flex-col h-full w-full">
@@ -871,11 +821,7 @@ function App() {
                   <div className="flex-1 flex flex-col overflow-auto">
                     {productsInOrder.length ? (
                       <div className="flex-1 w-full overflow-auto border-t-2">
-                        <Cart
-                          cart={productsInOrder}
-                          setProduct={setProductSelected}
-                          productSelected={productSelected}
-                        />
+                        <Cart cart={productsInOrder} setProduct={setProductSelected} productSelected={productSelected} />
                       </div>
                     ) : (
                       <div className="flex-1 w-full p-4 opacity-25 flex flex-col flex-wrap content-center justify-center">
@@ -909,9 +855,7 @@ function App() {
                     <div className="h-auto w-full text-center pb-1 px-4">
                       <div className="flex text-lg font-semibold text-blue-gray-700">
                         <div>TOTAL</div>
-                        <div className="text-right w-full font-bold">
-                          ${new Intl.NumberFormat().format(calculateTotal())}
-                        </div>
+                        <div className="text-right w-full font-bold">${new Intl.NumberFormat().format(calculateTotal())}</div>
                       </div>
                     </div>
 
@@ -930,7 +874,7 @@ function App() {
                             className="text-gray text-lg w-full h-full py-3 focus:outline-none bg-yellow-300 hover:bg-yellow-400"
                             onClick={() => {
                               if (productsInOrder?.length && !orderSelected) {
-                                console.log("se crea uno nuevo", orderSelected);
+                                console.log('se crea uno nuevo', orderSelected);
                                 handleCreateAndCleanOrder();
                               } else {
                                 updateOrderSelected(false); //TODO: cuadno es uan orden creda anterioirmente
@@ -940,11 +884,7 @@ function App() {
                             }}
                           >
                             Pendiente
-                            <FontAwesomeIcon
-                              icon={faMoneyBill}
-                              color="black"
-                              className="ml-2"
-                            />
+                            <FontAwesomeIcon icon={faMoneyBill} color="black" className="ml-2" />
                           </button>
                         </div>
                         <div className="flex-grow">
@@ -962,13 +902,10 @@ function App() {
                           <button
                             key={number.id}
                             onClick={() => {
-                              if (number.value === "borrar") {
-                                updateProductOrder(
-                                  productSelected.id,
-                                  productSelected
-                                );
+                              if (number.value === 'borrar') {
+                                updateProductOrder(productSelected.id, productSelected);
                               } else if (
-                                typeof number.value === "number" &&
+                                typeof number.value === 'number' &&
                                 (number.value as number) > 0 &&
                                 (number.value as number) < 10
                               ) {
@@ -991,10 +928,7 @@ function App() {
         )}
 
         {/* {Modulo de lista de ordenes} */}
-        <div
-          className={`${pageView === "orders" ? "flex h-screen" : "hidden"
-            } text-white`}
-        >
+        <div className={`${pageView === 'orders' ? 'flex h-screen' : 'hidden'} text-white`}>
           {/* {Contenedor de las ordenes} */}
           <div className="flex-1 overflow-y-auto">
             <div className="w-full bg-cyan-400 h-12 p-2 flex items-center overflow-hidden sticky top-0">
@@ -1044,10 +978,7 @@ function App() {
               <div className="flex-1 flex flex-col overflow-auto">
                 {orderSelected ? (
                   <div className="flex-1 w-full overflow-auto">
-                    <Cart
-                      cart={orderSelected?.products || []}
-                      isCreated={true}
-                    />
+                    <Cart cart={orderSelected?.products || []} isCreated={true} />
                   </div>
                 ) : (
                   <div className="flex-1 w-full p-4 opacity-25 flex flex-col flex-wrap content-center justify-center">
@@ -1073,10 +1004,7 @@ function App() {
                   <div className="flex text-lg font-semibold text-blue-gray-700">
                     <div>TOTAL</div>
                     <div className="text-right w-full">
-                      $
-                      {new Intl.NumberFormat().format(
-                        calculateTotal() || orderSelected?.total || 0
-                      )}
+                      ${new Intl.NumberFormat().format(calculateTotal() || orderSelected?.total || 0)}
                     </div>
                   </div>
                 </div>
@@ -1088,14 +1016,12 @@ function App() {
                         <button
                           className="text-white text-lg w-full h-full py-3 focus:outline-none bg-gray-500 hover:bg-gray-600"
                           onClick={() => {
-                            if (orderSelected?.orderStatus === "PAID") {
+                            if (orderSelected?.orderStatus === 'PAID') {
                               return;
                             }
-                            setProductsInOrderByDbHandler(
-                              orderSelected?.products
-                            );
+                            setProductsInOrderByDbHandler(orderSelected?.products);
                             setIsEditOrder(true);
-                            setPageView("sales");
+                            setPageView('sales');
                           }}
                         >
                           Editar Orden <FontAwesomeIcon icon={faUtensils} />
@@ -1120,9 +1046,7 @@ function App() {
                           openModal();
                         }}
                       >
-                        {orderSelected?.orderStatus === "PAID"
-                          ? "YA SE PAGO"
-                          : "Pagar"}
+                        {orderSelected?.orderStatus === 'PAID' ? 'YA SE PAGO' : 'Pagar'}
                       </button>
                     </div>
                   </div>
@@ -1133,9 +1057,7 @@ function App() {
         </div>
 
         {/* {Modulo de Inventario} */}
-        <div
-          className={`${pageView === "inventory" ? "flex h-screen" : "hidden"}`}
-        >
+        <div className={`${pageView === 'inventory' ? 'flex h-screen' : 'hidden'}`}>
           {/* {Contenedor Inventario} */}
           <div className="flex-1 overflow-y-auto">
             <div className="w-full bg-white h-15 p-2 sticky top-0">
@@ -1154,23 +1076,18 @@ function App() {
           <div className="w-[85vw] h-auto text-gray-700 max-w-[100%]">
             <div className="flex w-full">
               <span className="mr-2">Valor Ingresado</span>
-              <span className="text-red-500 font-bold">
-                ${new Intl.NumberFormat().format(Number(valueInPayment))}
-              </span>
+              <span className="text-red-500 font-bold">${new Intl.NumberFormat().format(Number(valueInPayment))}</span>
             </div>
             <div className="w-full flex font-normal text-gray-500">
               <span className="mr-2">Total Venta</span>
               <span
-                className={`${Number(valueInPayment) >=
-                    (!!orderSelected ? orderSelected?.total : calculateTotal())
-                    ? "text-green-600 font-semibold"
-                    : "text-gray-500"
-                  }`}
+                className={`${
+                  Number(valueInPayment) >= (!!orderSelected ? orderSelected?.total : calculateTotal())
+                    ? 'text-green-600 font-semibold'
+                    : 'text-gray-500'
+                }`}
               >
-                $
-                {new Intl.NumberFormat().format(
-                  calculateTotal() || orderSelected?.total
-                )}
+                ${new Intl.NumberFormat().format(calculateTotal() || orderSelected?.total)}
               </span>
             </div>
             {/* <h2 className="text-lg font-bold mb-2">Realizar Pago</h2> */}
@@ -1181,11 +1098,9 @@ function App() {
                   <span className="text-blue-500">
                     $
                     {new Intl.NumberFormat().format(
-                      Number(valueInPayment) >
-                        (calculateTotal() || orderSelected?.total)
-                        ? Number(valueInPayment) -
-                        (calculateTotal() || orderSelected?.total)
-                        : 0
+                      Number(valueInPayment) > (calculateTotal() || orderSelected?.total)
+                        ? Number(valueInPayment) - (calculateTotal() || orderSelected?.total)
+                        : 0,
                     )}
                   </span>
                 </div>
@@ -1197,19 +1112,18 @@ function App() {
                 <button
                   key={number.id}
                   onClick={() => {
-                    if (number.value === "borrar") {
+                    if (number.value === 'borrar') {
                       setValueInPayment((prevValue) => prevValue.slice(0, -1));
                       return;
                     }
-                    if (number.label.includes("+")) {
+                    if (number.label.includes('+')) {
                       setValueInPayment((prevValue) => {
-                        const newValue =
-                          Number(prevValue) + Number(number.value);
+                        const newValue = Number(prevValue) + Number(number.value);
                         return newValue.toString();
                       });
                       return;
                     }
-                    if (number.value === "no-action") {
+                    if (number.value === 'no-action') {
                       return;
                     }
                     setValueInPayment((prevValue) => {
@@ -1218,15 +1132,7 @@ function App() {
                   }}
                   className="bg-white text-gray p-3 hover:bg-gray-200 focus:outline-none border border-solid border-gray-400 h-[70px]"
                 >
-                  {number.label === "<--" ? (
-                    <FontAwesomeIcon
-                      icon={faDeleteLeft}
-                      color="red"
-                      fontSize={22}
-                    />
-                  ) : (
-                    number.label
-                  )}
+                  {number.label === '<--' ? <FontAwesomeIcon icon={faDeleteLeft} color="red" fontSize={22} /> : number.label}
                 </button>
               ))}
             </div>
@@ -1258,31 +1164,20 @@ function App() {
         </Modal>
 
         {/* {REcibo MOdal} */}
-        <Modal
-          isOpen={modalCockIsOpen}
-          onClose={() => setModalCockIsOpen(!modalCockIsOpen)}
-        >
-          <div
-            className="w-96 bg-white overflow-x-auto z-10 text-gray-500 h-auto max-h-[80vh]"
-            id="print-area"
-          >
+        <Modal isOpen={modalCockIsOpen} onClose={() => setModalCockIsOpen(!modalCockIsOpen)}>
+          <div className="w-96 bg-white overflow-x-auto z-10 text-gray-500 h-auto max-h-[80vh]" id="print-area">
             <div className="text-left w-full text-sm p-4 overflow-auto">
               <div className="text-center">
                 <h2 className="text-xl font-semibold">Mandar a Cocina</h2>
               </div>
               <div className="flex mt-4 text-xs">
                 <div className="flex-grow">
-                  No. de items:{" "}
+                  No. de items:{' '}
                   {isEditOrder
-                    ? productsInOrder.filter(
-                      (producto) =>
-                        producto.quantity !== producto.initialQuantity
-                    ).length
+                    ? productsInOrder.filter((producto) => producto.quantity !== producto.initialQuantity).length
                     : productsInOrder.length}
                 </div>
-                <div className="text-md">
-                  {new Date().toLocaleString(undefined, { hour12: true })}
-                </div>
+                <div className="text-md">{new Date().toLocaleString(undefined, { hour12: true })}</div>
               </div>
               <hr className="my-2" />
               <div>
@@ -1297,41 +1192,34 @@ function App() {
                   <tbody>
                     {isEditOrder && orderSelected?.isPrint
                       ? productsInOrder
-                        .filter(
-                          (producto) =>
-                            producto.quantity !== producto.initialQuantity
-                        )
-                        .map((item: any, index: any) => (
+                          .filter((producto) => producto.quantity !== producto.initialQuantity)
+                          .map((item: any, index: any) => (
+                            <tr key={index}>
+                              <td className="py-2 text-center">{index + 1}</td>
+                              <td className="py-2 text-left">
+                                <span>{item.name}</span>
+                                <br />
+                                {/* {item?.note && <small>Nota: {item.note}</small>} */}
+                              </td>
+                              <td className="py-2 text-center">
+                                {item?.initialQuantity ? item.quantity - item?.initialQuantity : item.quantity}
+                              </td>
+                            </tr>
+                          ))
+                      : productsInOrder.map((item: any, index: any) => (
                           <tr key={index}>
                             <td className="py-2 text-center">{index + 1}</td>
                             <td className="py-2 text-left">
                               <span>{item.name}</span>
                               <br />
-                              {/* {item?.note && <small>Nota: {item.note}</small>} */}
-                            </td>
-                            <td className="py-2 text-center">
-                              {item?.initialQuantity
-                                ? item.quantity - item?.initialQuantity
-                                : item.quantity}
-                            </td>
-                          </tr>
-                        ))
-                      : productsInOrder.map((item: any, index: any) => (
-                        <tr key={index}>
-                          <td className="py-2 text-center">{index + 1}</td>
-                          <td className="py-2 text-left">
-                            <span>{item.name}</span>
-                            <br />
-                            {item?.note && <small>Nota: {item.note}</small>}
+                              {item?.note && <small>Nota: {item.note}</small>}
 
-                            {/* <br />
+                              {/* <br />
                           <small>Sabores: Chocolate, Mandarina</small> */}
-                          </td>
-                          <td className="py-2 text-center">
-                            {item.quantity}
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="py-2 text-center">{item.quantity}</td>
+                          </tr>
+                        ))}
                   </tbody>
                 </table>
               </div>
@@ -1339,9 +1227,7 @@ function App() {
               <div className="w-full justify-end flex">
                 <span className="font-bold text-right">
                   TOTAL $
-                  {isChecked
-                    ? new Intl.NumberFormat().format(calculateTotal() + 1500)
-                    : new Intl.NumberFormat().format(calculateTotal())}
+                  {isChecked ? new Intl.NumberFormat().format(calculateTotal() + 1500) : new Intl.NumberFormat().format(calculateTotal())}
                 </span>
               </div>
             </div>
@@ -1354,18 +1240,13 @@ function App() {
                   checked={isChecked}
                   onChange={handleCheckboxChange}
                 />
-                <label
-                  htmlFor="exampleCheckbox"
-                  className="ml-2 text-gray-700 font-medium cursor-pointer"
-                >
+                <label htmlFor="exampleCheckbox" className="ml-2 text-gray-700 font-medium cursor-pointer">
                   Es un Domicilio?
                 </label>
               </div>
               {isChecked && (
                 <div className="mb-4">
-                  <span className="text-sm font-normal flex justify-left ml-2">
-                    Direccion:
-                  </span>
+                  <span className="text-sm font-normal flex justify-left ml-2">Direccion:</span>
                   <input
                     type="text"
                     value={address}
@@ -1374,9 +1255,7 @@ function App() {
                     className="w-full h-10 mr-2 text-left bg-none px-2 focus:outline-gray-800 text-gray-800 mt-2 ml-1 border border-gray-500 rounded-md"
                     placeholder="Ingresa la direccion del cliente..."
                   />
-                  <span className="text-sm font-normal flex justify-left ml-2 mt-2">
-                    Celular:
-                  </span>
+                  <span className="text-sm font-normal flex justify-left ml-2 mt-2">Celular:</span>
                   <input
                     type="text"
                     value={phoneClient}
@@ -1390,14 +1269,12 @@ function App() {
               <button
                 className="bg-cyan-500 text-white text-lg px-4 py-3 rounded-2xl w-full focus:outline-none"
                 onClick={() => {
-                  const haveItemsByDb = productsInOrder.filter(
-                    (producto) => producto.quantity !== producto.initialQuantity
-                  ).length;
+                  const haveItemsByDb = productsInOrder.filter((producto) => producto.quantity !== producto.initialQuantity).length;
                   const haveItems = productsInOrder.length;
                   if (haveItemsByDb || orderSelected?.isPrint || haveItems) {
                     printAndProceed();
-                    setPhoneClient("");
-                    setAddress("");
+                    setPhoneClient('');
+                    setAddress('');
                   }
                   setIsChecked(false);
                 }}
@@ -1409,8 +1286,8 @@ function App() {
                   className="bg-green-500 text-white text-lg px-4 py-3 rounded-2xl w-full focus:outline-none mt-2"
                   onClick={() => {
                     updateOrderSelected(false);
-                    setPhoneClient("");
-                    setAddress("");
+                    setPhoneClient('');
+                    setAddress('');
                     setIsChecked(false);
                   }}
                 >
@@ -1422,14 +1299,8 @@ function App() {
         </Modal>
 
         {/* {Sabores de Helado Modal} */}
-        <Modal
-          isOpen={openModalFlavors}
-          onClose={() => setOpenModalFlavors(!openModalFlavors)}
-        >
-          <div
-            className="w-96 bg-white overflow-x-auto z-10 text-gray-500 h-auto max-h-[80vh]"
-            id="print-area"
-          >
+        <Modal isOpen={openModalFlavors} onClose={() => setOpenModalFlavors(!openModalFlavors)}>
+          <div className="w-96 bg-white overflow-x-auto z-10 text-gray-500 h-auto max-h-[80vh]" id="print-area">
             <div className="bg-white p-6 rounded-md shadow-md w-96">
               <h2 className="text-2xl font-bold mb-4">Sabores Disponibles</h2>
               <div className="flex justify-between h-10 mb-5">
@@ -1440,10 +1311,7 @@ function App() {
                   className="w-full h-10 px-2 mb-4 border border-gray-300 rounded-md"
                   placeholder="Ingrese el sabor disponible"
                 />
-                <button
-                  onClick={handleSave}
-                  className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 ml-2"
-                >
+                <button onClick={handleSave} className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 ml-2">
                   Agregar
                 </button>
               </div>
@@ -1458,14 +1326,9 @@ function App() {
                 <tbody>
                   {flavorsList.map((flavor, index) => (
                     <tr key={index}>
-                      <td className="border-b border-gray-300 py-2 text-left">
-                        {flavor.name}
-                      </td>
+                      <td className="border-b border-gray-300 py-2 text-left">{flavor.name}</td>
                       <td className="border-b border-gray-300 py-2 text-right">
-                        <button
-                          onClick={() => handleDelete(flavor.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
+                        <button onClick={() => handleDelete(flavor.id)} className="text-red-500 hover:text-red-700">
                           Eliminar
                         </button>
                       </td>
