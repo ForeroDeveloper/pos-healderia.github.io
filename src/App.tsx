@@ -56,9 +56,8 @@ const OnScreenKeyboard = ({ onKeyPress }: any) => {
               <button
                 key={key}
                 onClick={() => handleKeyPress(key)}
-                className={`m-1 p-2 bg-gray-300 rounded ${
-                  key === "Espacio" ? "w-[50%] mx-auto" : "w-[5.2rem]"
-                } h-10`}
+                className={`m-1 p-2 bg-gray-300 rounded ${key === "Espacio" ? "w-[50%] mx-auto" : "w-[5.2rem]"
+                  } h-10`}
               >
                 {key === "Del" ? (
                   <span>
@@ -188,9 +187,8 @@ function App() {
 
   const handleCreateOrder = (isPayment: boolean = false): void => {
     const currentDate = new Date();
-    const formattedDate = `${currentDate.getDate()}-${
-      currentDate.getMonth() + 1
-    }-${currentDate.getFullYear()}`;
+    const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1
+      }-${currentDate.getFullYear()}`;
     try {
       console.log("productsInOrder", productsInOrder);
 
@@ -344,9 +342,8 @@ function App() {
   };
   const handleDeleteOrder = (id: string) => {
     const currentDate = new Date();
-    const formattedDate = `${currentDate.getDate()}-${
-      currentDate.getMonth() + 1
-    }-${currentDate.getFullYear()}`;
+    const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1
+      }-${currentDate.getFullYear()}`;
     try {
       const orderRef = ref(realtimeDb, `orders/${formattedDate}/${id}`);
       remove(orderRef);
@@ -380,9 +377,8 @@ function App() {
 
   useEffect(() => {
     const currentDate = new Date();
-    const formattedDate = `${currentDate.getDate()}-${
-      currentDate.getMonth() + 1
-    }-${currentDate.getFullYear()}`;
+    const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1
+      }-${currentDate.getFullYear()}`;
     const starCountRef = ref(realtimeDb, `orders/${formattedDate}`);
     onValue(
       starCountRef,
@@ -407,9 +403,8 @@ function App() {
 
   const updateOrderSelected = async (isPaid: boolean = true) => {
     const currentDate = new Date();
-    const formattedDate = `${currentDate.getDate()}-${
-      currentDate.getMonth() + 1
-    }-${currentDate.getFullYear()}`;
+    const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1
+      }-${currentDate.getFullYear()}`;
     const productRef = ref(
       realtimeDb,
       `orders/${formattedDate}/${orderSelected?.id}`
@@ -459,21 +454,45 @@ function App() {
     setIsFocused(!isFocused);
   };
 
-  // useEffect(() => {
-  //   if (
-  //     productsInOrder?.length > 0 &&
-  //     productsInOrder?.findIndex(
-  //       (products) => products?.id === productSelected?.id
-  //     ) === -1
-  //   ) {
-  //     setProductSelected(productsInOrder[productsInOrder.length - 1]);
-  //   }
-  // }, [productSelected, productsInOrder]);
+  console.log(productsInOrder, 'productList')
 
   return (
     <>
       <div className="h-screen hide-print">
         {/* {Header con opciones} */}
+        {isDesktop &&
+          (
+            <div className="w-full bg-cyan-800 h-11 py-2 pr-1 flex justify-end">
+              <button
+                className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md mr-3"
+                onClick={() => setOpenModalFlavors(true)}
+              >
+                Sabores de Helado <FontAwesomeIcon icon={faIceCream} />
+              </button>
+              <button
+                className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md mr-3"
+                onClick={() => setPageView("inventory")}
+              >
+                Inventario <FontAwesomeIcon icon={faBox} />
+              </button>
+              <button
+                className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md"
+                onClick={() => setPageView("orders")}
+              >
+                Ordenes <FontAwesomeIcon icon={faUtensils} />
+              </button>
+              <button
+                className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md ml-3"
+                onClick={() => {
+                  setPageView("sales");
+                  setOrderSelected(null);
+                }}
+              >
+                Realizar venta <FontAwesomeIcon icon={faCartShopping} />
+              </button>
+            </div>
+          )
+        }
         {isDesktop ||
           (isTablet && (
             <div className="w-full bg-cyan-800 h-11 py-2 pr-1 flex justify-end">
@@ -678,14 +697,25 @@ function App() {
                       <div className="rounded-full bg-cyan-500 text-white w-6 left-2 relative mt-2">
                         <FontAwesomeIcon icon={faMagnifyingGlass} />
                       </div>
-                      <input
-                        type="text"
-                        value={searchTerm}
-                        readOnly
-                        onClick={() => setShowKeyboard(!showKeyboard)}
-                        className="w-full mr-2 text-left bg-none px-2 focus:outline-none text-gray-800 mt-2 ml-1 truncate"
-                        placeholder="Buscar producto..."
-                      />
+                      {isDesktop ? (
+                        <input
+                          type="text"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full mr-2 text-left bg-none px-2 focus:outline-none text-gray-800 mt-2 ml-1 truncate"
+                          placeholder="Buscar producto..."
+                        />
+
+                      ) : (
+                        <input
+                          type="text"
+                          value={searchTerm}
+                          readOnly
+                          onClick={() => setShowKeyboard(!showKeyboard)}
+                          className="w-full mr-2 text-left bg-none px-2 focus:outline-none text-gray-800 mt-2 ml-1 truncate"
+                          placeholder="Buscar producto..."
+                        />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -693,7 +723,9 @@ function App() {
 
               {/* {LISTA DE PRODUCTOS} */}
               <div className="grid grid-cols-4 gap-2 pb-2 text-gray-700 p-2">
-                {filteredProducts.map((producto) => (
+                {filteredProducts.map((producto) => {
+                    const productInOrder = productsInOrder.find((product) => product.id === producto.id);
+                  return(
                   <div
                     key={producto.id}
                     role="button"
@@ -701,9 +733,14 @@ function App() {
                       addProductOrder(producto);
                       setProductSelected(producto);
                     }}
-                    className="cursor-pointer transition-shadow overflow-hidden rounded-2xl bg-white shadow hover:shadow-lg"
+                    className="cursor-pointer transition-shadow overflow-hidden rounded-2xl bg-white shadow hover:shadow-lg relative flex flex-col"
                   >
-                    <ImageComponent src={producto.image} />
+                    {productInOrder && (
+                      <span className="bg-blue-400 text-zinc-50 py-1 px-2 rounded-full text-xs absolute top-0 right-4 mt-2 -mr-1 font-bold">
+                        {productInOrder.quantity}
+                      </span>
+                    )}
+                <ImageComponent src={producto.image} />
                     <div className="flex flex-col pb-3 px-3 text-sm justify-start text-left">
                       <p className="flex-grow mr-1">{producto.name}</p>
                       <p className="nowrap font-bold text-cyan-500">
@@ -711,7 +748,9 @@ function App() {
                       </p>
                     </div>
                   </div>
-                ))}
+                );
+              })
+            }
               </div>
 
               {showKeyboard && <OnScreenKeyboard onKeyPress={handleKeyPress} />}
@@ -953,9 +992,8 @@ function App() {
 
         {/* {Modulo de lista de ordenes} */}
         <div
-          className={`${
-            pageView === "orders" ? "flex h-screen" : "hidden"
-          } text-white`}
+          className={`${pageView === "orders" ? "flex h-screen" : "hidden"
+            } text-white`}
         >
           {/* {Contenedor de las ordenes} */}
           <div className="flex-1 overflow-y-auto">
@@ -1123,12 +1161,11 @@ function App() {
             <div className="w-full flex font-normal text-gray-500">
               <span className="mr-2">Total Venta</span>
               <span
-                className={`${
-                  Number(valueInPayment) >=
-                  (!!orderSelected ? orderSelected?.total : calculateTotal())
+                className={`${Number(valueInPayment) >=
+                    (!!orderSelected ? orderSelected?.total : calculateTotal())
                     ? "text-green-600 font-semibold"
                     : "text-gray-500"
-                }`}
+                  }`}
               >
                 $
                 {new Intl.NumberFormat().format(
@@ -1147,7 +1184,7 @@ function App() {
                       Number(valueInPayment) >
                         (calculateTotal() || orderSelected?.total)
                         ? Number(valueInPayment) -
-                            (calculateTotal() || orderSelected?.total)
+                        (calculateTotal() || orderSelected?.total)
                         : 0
                     )}
                   </span>
@@ -1238,9 +1275,9 @@ function App() {
                   No. de items:{" "}
                   {isEditOrder
                     ? productsInOrder.filter(
-                        (producto) =>
-                          producto.quantity !== producto.initialQuantity
-                      ).length
+                      (producto) =>
+                        producto.quantity !== producto.initialQuantity
+                    ).length
                     : productsInOrder.length}
                 </div>
                 <div className="text-md">
@@ -1260,41 +1297,41 @@ function App() {
                   <tbody>
                     {isEditOrder && orderSelected?.isPrint
                       ? productsInOrder
-                          .filter(
-                            (producto) =>
-                              producto.quantity !== producto.initialQuantity
-                          )
-                          .map((item: any, index: any) => (
-                            <tr key={index}>
-                              <td className="py-2 text-center">{index + 1}</td>
-                              <td className="py-2 text-left">
-                                <span>{item.name}</span>
-                                <br />
-                                {/* {item?.note && <small>Nota: {item.note}</small>} */}
-                              </td>
-                              <td className="py-2 text-center">
-                                {item?.initialQuantity
-                                  ? item.quantity - item?.initialQuantity
-                                  : item.quantity}
-                              </td>
-                            </tr>
-                          ))
-                      : productsInOrder.map((item: any, index: any) => (
+                        .filter(
+                          (producto) =>
+                            producto.quantity !== producto.initialQuantity
+                        )
+                        .map((item: any, index: any) => (
                           <tr key={index}>
                             <td className="py-2 text-center">{index + 1}</td>
                             <td className="py-2 text-left">
                               <span>{item.name}</span>
                               <br />
-                              {item?.note && <small>Nota: {item.note}</small>}
-
-                              {/* <br />
-                          <small>Sabores: Chocolate, Mandarina</small> */}
+                              {/* {item?.note && <small>Nota: {item.note}</small>} */}
                             </td>
                             <td className="py-2 text-center">
-                              {item.quantity}
+                              {item?.initialQuantity
+                                ? item.quantity - item?.initialQuantity
+                                : item.quantity}
                             </td>
                           </tr>
-                        ))}
+                        ))
+                      : productsInOrder.map((item: any, index: any) => (
+                        <tr key={index}>
+                          <td className="py-2 text-center">{index + 1}</td>
+                          <td className="py-2 text-left">
+                            <span>{item.name}</span>
+                            <br />
+                            {item?.note && <small>Nota: {item.note}</small>}
+
+                            {/* <br />
+                          <small>Sabores: Chocolate, Mandarina</small> */}
+                          </td>
+                          <td className="py-2 text-center">
+                            {item.quantity}
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>
