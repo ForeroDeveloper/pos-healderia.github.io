@@ -431,11 +431,10 @@ function App() {
       inputRef.current.blur();
     } else {
       inputRef.current.focus();
+      setSearchTerm('')
     }
     setIsFocused(!isFocused);
   };
-
-  console.log(productsInOrder, 'productList');
 
   return (
     <>
