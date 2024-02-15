@@ -65,19 +65,8 @@ const CarItem = ({ item, productSelected, isCreated, setProduct }: any) => {
         }
     }, [productSelected]);
 
-    // const handleNoteChangeWithDb = (index: any, value: string) => {
-    //   setIsChangedNote(true);
-    //   console.log(index, value);
-    //   const newNoteTexts = [...noteTexts];
-    //   newNoteTexts[index] = value.replace(/^undefined/, "");
-    //   setNoteTexts(newNoteTexts);
-    // };
-
     useEffect(() => {
-        // if (item && false) {
-        //   const noteByProduct = item?.note.split(" | ");
-        //   setNoteTexts(noteByProduct);
-        // }
+
         if (item && Array.isArray(item.notes)) {
             const newArrayText = item?.notes?.map((item: any) => item.note + ', ');
             setNoteTexts(newArrayText);
@@ -88,7 +77,6 @@ const CarItem = ({ item, productSelected, isCreated, setProduct }: any) => {
         return noteTexts[index];
     };
 
-    console.log('noteTExts', noteTexts);
 
     return (
         <div key={item.id} onClick={() => setProduct(item)}>
@@ -170,7 +158,7 @@ const CarItem = ({ item, productSelected, isCreated, setProduct }: any) => {
                                     {flavorsList.map((flavor) => (
                                         <span
                                             key={flavor.id}
-                                            className="inline-block bg-blue-500 text-white px-2 py-0 rounded-full cursor-pointer hover:bg-blue-600 text-sm mr-1"
+                                            className="inline-block bg-blue-500 text-white px-2 py-0 rounded-full cursor-pointer hover:bg-blue-600 text-sm mr-1 mb-3"
                                             onClick={() => {
                                                 handleNoteChange(index, noteTexts[index] + flavor?.name + ', ');
                                             }}
@@ -188,7 +176,7 @@ const CarItem = ({ item, productSelected, isCreated, setProduct }: any) => {
                         <button
                             className=" bg-cyan-300 text-white p-1 rounded-md font-semibold px-2"
                             onClick={() => {
-                                updateProductOrder(item.id, { ...item, notes: { ...formatterNotes() }}, false);
+                                updateProductOrder(item.id, { ...item, notes: [...formatterNotes()] }, false);
                                 setOpenModal(false);
                             }}
                         >

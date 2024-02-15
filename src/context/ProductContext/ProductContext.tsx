@@ -111,7 +111,7 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
     updatedProduct: any,
     isDelete: boolean = true
   ) => {
-    console.log('llega', updateProduct)
+    console.log('llega', updatedProduct)
     setProductsInOrder((prevList) =>
       prevList
         .map((product) =>
