@@ -32,6 +32,8 @@ interface ProductContextProps {
   setOrderSelected: (categories: any[] | null) => void;
   setProductsInOrderByDbHandler: (productsByDb: any[] | null) => void;
   setIsEditOrder: (isEdit: boolean) => void;
+  setIsModalOpen: (isOpne: boolean) => void;
+  isModalOpen: boolean;
 }
 
 const ProductContext = createContext<ProductContextProps | undefined>(
@@ -59,6 +61,7 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
   const [productsInOrder, setProductsInOrder] = useState<any[]>([]);
   const [orderSelected, setOrderSelected] = useState<any | null>(null);
   const [isEditOrder, setIsEditOrder] = useState<boolean>(false);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const addProduct = (newProduct: any) => {
     setProductList((prevList) => [...prevList, newProduct]);
@@ -68,6 +71,9 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
     const existingProductIndex = productsInOrder.findIndex(
       (product) => product.id === newProduct.id
     );
+
+    console.log('existingProductIndex', existingProductIndex, newProduct)
+
 
     if (existingProductIndex !== -1) {
       setProductsInOrder((prevList) => {
@@ -79,6 +85,8 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
         return updatedList;
       });
     } else {
+      console.log('else', existingProductIndex, productsInOrder)
+
       setProductsInOrder((prevList) => [
         ...prevList,
         { ...newProduct, quantity: 1 },
@@ -146,6 +154,10 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
   const setIsEditDbHandler = (isEdit: boolean) => {
     setIsEditOrder(isEdit);
   };
+  const setIsModalHandler = (isEdit: boolean) => {
+    console.log('cambia', isEdit)
+    setIsModalOpen(isEdit);
+  };
 
   const value: ProductContextProps = {
     productList,
@@ -167,6 +179,8 @@ export const ProductProvider: React.FC<ProductProviderProps> = ({
     setIsEditOrder: setIsEditDbHandler,
     isEditOrder,
     setOrderSelected: setOrderSelectedHandler,
+    setIsModalOpen: setIsModalHandler,
+    isModalOpen,
   };
 
   return (

@@ -9,7 +9,7 @@ const Modal = ({ isOpen, onClose, children }: any) => {
   return (
     <>
       {isOpen && (
-        <div className="fixed inset-0 flex items-center justify-center">
+        <div className="fixed inset-0 flex items-center justify-center z-[60]">
           <div
             className="fixed inset-0 bg-gray-800 opacity-50"
             onClick={handleBackdropClick}

@@ -54,3 +54,37 @@
   display: table;
   clear: both;
 }
+
+body {
+  visibility: visible;
+}
+
+#invoices {
+  display: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  #invoices, #invoices * {
+    visibility: visible;
+  }
+
+  #invoices {
+    color: black;
+    font-family: sans-serif !important;
+    display: block;
+    width: 58mm;
+    margin-left: 7mm;
+    font-size: 8px !important;
+    margin-top: 6mm;
+    transform: scale(1.45);
+    position: absolute;
+    right: 0;
+    left: 0;
+    top: 2mm;
+    height: 100px;
+  }
+}

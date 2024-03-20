@@ -27,7 +27,7 @@ import { ref, set, push, onValue, remove, update } from 'firebase/database';
 // @ts-expect-error
 import { db, realtimeDb } from '../src/config/firestore.js';
 import ImageComponent from './Components/ImageComponent/ImageComponent.js';
-import { isMobile, isTablet, isDesktop } from 'react-device-detect';
+import { isMobile, isDesktop } from 'react-device-detect';
 
 declare global {
   interface Window {
@@ -106,6 +106,8 @@ function App() {
     isEditOrder,
     setProductsInOrderByDbHandler,
     setFlavorsList: setFlavorsInContext,
+    isModalOpen,
+    setIsModalOpen,
   } = useProductContext();
 
   const [isChecked, setIsChecked] = useState(false);
@@ -120,10 +122,12 @@ function App() {
       return;
     }
     setModalIsOpen(true);
+    setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setModalIsOpen(false);
+    setIsModalOpen(false);
     setValueInPayment('');
   };
 
@@ -188,8 +192,6 @@ function App() {
     const currentDate = new Date();
     const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1}-${currentDate.getFullYear()}`;
     try {
-      console.log('productsInOrder', productsInOrder, isChecked);
-
       const ordersRef = ref(realtimeDb, `orders/${formattedDate}`);
       const newOrderRef = push(ordersRef);
       const newOrderKEy = newOrderRef.key;
@@ -213,8 +215,8 @@ function App() {
       set(newOrderRef, newOrderToDb);
       setValueInPayment('');
       setIsChecked(false);
-      setAddress("");
-      setPhoneClient("");
+      setAddress('');
+      setPhoneClient('');
       console.log('Datos registrados en Realtime Database');
     } catch (error) {
       console.error('Error al registrar en Realtime Database:', error);
@@ -229,42 +231,46 @@ function App() {
   };
 
   const printAndProceed = () => {
-    const totalCalculated = calculateTotal();
-
-    let productsInOrder2 = productsInOrder.map((product) => {
-      if (product?.notes) {
-        const updatedNotes = Object?.values(product.notes || [])
-          .map((note: any) => (note !== '' ? `P${note.id}: ${note.note}` : ''))
-          .join(', ');
-        return { ...product, notes: updatedNotes };
-      } else {
-        return product;
-      }
-    });
-
-    const deliveryCost = isChecked ? 1500 : 0;
-
-    let arrayDataText = JSON.stringify({
-      products: productsInOrder2,
-      isDelivery: isChecked,
-      total: Number(totalCalculated + deliveryCost),
-      date: new Date().toLocaleString(undefined, { hour12: true }),
-      address,
-      phoneClient,
-      orderId: Object.keys(orderByDb).length + 1,
-    });
-
-    if (!orderSelected) {
-      handleCreateAndCleanOrder();
+    if (isDesktop) {
+      window.print();
     } else {
-      updateOrderSelected(false);
+      const totalCalculated = calculateTotal();
+
+      let productsInOrder2 = productsInOrder.map((product) => {
+        if (product?.notes) {
+          const updatedNotes = Object?.values(product.notes || [])
+            .map((note: any) => (note !== '' ? `P${note.id}: ${note.note}` : ''))
+            .join(', ');
+          return { ...product, notes: updatedNotes };
+        } else {
+          return product;
+        }
+      });
+
+      const deliveryCost = isChecked ? 1500 : 0;
+
+      let arrayDataText = JSON.stringify({
+        products: productsInOrder2,
+        isDelivery: isChecked,
+        total: Number(totalCalculated + deliveryCost),
+        date: new Date().toLocaleString(undefined, { hour12: true }),
+        address,
+        phoneClient,
+        orderId: Object.keys(orderByDb).length + 1,
+      });
+
+      if (!orderSelected) {
+        handleCreateAndCleanOrder();
+      } else {
+        updateOrderSelected(false);
+      }
+
+      console.log(arrayDataText);
+      console.log(`${arrayDataText}`);
+
+      window?.Toaster?.postMessage(`${arrayDataText}`);
+      setValueInPayment('');
     }
-
-    console.log(arrayDataText);
-    console.log(`${arrayDataText}`);
-
-    window?.Toaster?.postMessage(`${arrayDataText}`);
-    setValueInPayment('');
   };
 
   useEffect(() => {
@@ -406,6 +412,8 @@ function App() {
             initialQuantity: product?.quantity,
           })),
           orderStatus: isPaid ? 'PAID' : 'PENDING',
+          addressClient: address,
+          phoneClient,
           total: Number(calculateTotalUpdate(productsMap) + deliveryCost),
         });
       } else {
@@ -429,14 +437,84 @@ function App() {
       inputRef.current.blur();
     } else {
       inputRef.current.focus();
-      setSearchTerm('')
+      setSearchTerm('');
     }
     setIsFocused(!isFocused);
   };
 
+  const handleKeyPressEvent = (event: any) => {
+    if (event.key === 'Enter') {
+      if (modalIsOpen) {
+        setIsChecked(false);
+        if (orderSelected) {
+          updateOrderSelected();
+          setModalIsOpen(false);
+          setIsModalOpen(false)
+          return;
+        }
+        handleCreateAndCleanOrder(true);
+        setModalIsOpen(false);
+        setIsModalOpen(false)
+        return;
+      }
+      openModal();
+      return;
+    }
+
+    if (event.keyCode >= 112 && event.keyCode <= 120 && !isModalOpen) {
+      const keyValue = Number(event.key.match(/\d+/)[0]);
+      inputRef.current.blur();
+      if (filteredProducts[keyValue - 1]) {
+        addProductOrder(filteredProducts[keyValue - 1]);
+        setProductSelected(filteredProducts[keyValue - 1]);
+      }
+      return;
+    }
+
+    if (event.keyCode >= 65 && event.keyCode <= 90 && !isModalOpen) {
+      inputRef.current.focus();
+      return;
+    }
+
+    if (event.keyCode === 8 || event.keyCode === 46) {
+      if (!isModalOpen) {
+        // Tecla de retroceso o suprimir
+        inputRef.current.focus();
+      }
+      return;
+    }
+
+    // if (event.keyCode >= 112 && event.KeyCode <= 120) {
+    // 112 es el código de tecla para la tecla F1
+    //   inputRef.current.focus();
+    // } else if (event.keyCode === 113) {
+    // 113 es el código de tecla para la tecla F2
+    //   setPageView((prevPageView) => (prevPageView === 'sales' ? 'orders' : 'sales'));
+    // }
+  };
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyPressEvent);
+    // Limpiar el listener al desmontar el componente
+    return () => {
+      document.removeEventListener('keydown', handleKeyPressEvent);
+    };
+  }, [isModalOpen, filteredProducts, productList, productSelected]);
+
+  // const handleAfterPrint = () => {
+
+  // };
+
+  // useEffect(() => {
+  //   window.addEventListener('afterprint', handleAfterPrint);
+  //   return () => {
+  //     window.removeEventListener('afterprint', handleAfterPrint);
+  //   };
+  // }, []);
+
   return (
     <>
-      <div className="h-screen hide-print">
+      <div className="h-screen">
         {/* {Header con opciones} */}
         {isDesktop && (
           <div className="w-full bg-cyan-800 h-11 py-2 pr-1 flex justify-end">
@@ -469,7 +547,7 @@ function App() {
             </button>
           </div>
         )}
-        {isDesktop ||
+        {/* {isDesktop ||
           (isTablet && (
             <div className="w-full bg-cyan-800 h-11 py-2 pr-1 flex justify-end">
               <button
@@ -500,8 +578,7 @@ function App() {
                 Realizar venta <FontAwesomeIcon icon={faCartShopping} />
               </button>
             </div>
-          ))}
-
+          ))} */}
         {isMobile && (
           <div className="w-full bg-cyan-800 h-11 py-2 pr-1 flex justify-end">
             <button
@@ -572,7 +649,11 @@ function App() {
                       <div className="h-auto">
                         <button
                           className="text-white text-lg w-full h-full py-3 focus:outline-none bg-gray-500 hover:bg-gray-600"
-                          onClick={() => setModalCockIsOpen(!modalCockIsOpen)}
+                          // onClick={() => window.print()}
+                          onClick={() => {
+                            setModalCockIsOpen(!modalCockIsOpen);
+                            setIsModalOpen(true);
+                          }}
                         >
                           M. Cocina <FontAwesomeIcon icon={faUtensils} />
                         </button>
@@ -581,7 +662,7 @@ function App() {
                         <button
                           className="text-gray text-lg w-full h-full py-3 focus:outline-none bg-yellow-300 hover:bg-yellow-400"
                           onClick={() => {
-                            if(isChecked){
+                            if (isChecked) {
                               setIsChecked(false);
                             }
                             if (productsInOrder?.length && !orderSelected) {
@@ -614,8 +695,8 @@ function App() {
                           onClick={() => {
                             if (number.value === 'borrar') {
                               updateProductOrder(productSelected.id, productSelected);
-                            } else {
-                              // handleChageQuantityProduct(number);
+                            } else if (!isNaN(number.value as number)) {
+                              addProductOrder(productSelected, number.value as unknown as number);
                             }
                           }}
                           className="bg-white text-gray p-3 hover:bg-gray-300 focus:outline-none border border-solid border-gray-500"
@@ -632,26 +713,36 @@ function App() {
             {/* Contenedor principal para productos (Ocupa todo el espacio disponible) */}
 
             <div className="flex-1 overflow-y-auto">
-              <div className="w-full bg-cyan-400 h-12 p-2 flex items-center overflow-hidden sticky top-0">
+              <div className="w-full bg-cyan-400 h-12 p-2 flex items-center overflow-hidden sticky top-0 z-50">
                 <div className="flex w-full items-center">
-                  <FontAwesomeIcon icon={faHouse} size="2x" onClick={() => handleChangeCategory('')} className="cursor-pointer" />
+                  <FontAwesomeIcon
+                    icon={faHouse}
+                    size="2x"
+                    onClick={() => {
+                      handleChangeCategory('');
+                      setSearchTerm('');
+                    }}
+                    className="cursor-pointer"
+                  />
 
-                  <div className="flex w-full items-center">
-                    {/* {categorias} */}
-                    <div className="flex w-3/4 overflow-x-auto">
-                      {categoriesList.map((categoria, index) => (
-                        <button
-                          className="text-sm font-semibold ml-3 hover:bg-cyan-300 bg-none rounded truncate p-[0.3rem]"
-                          onClick={() => handleChangeCategory(categoria)}
-                          key={index + 1}
-                        >
-                          {categoria}
-                        </button>
-                      ))}
-                    </div>
+                  <div className="flex w-full items-center overflow-x-auto">
+                    {/* Mostrar las categorías */}
+                    {categoriesList.map((categoria, index) => (
+                      <button
+                        className="text-sm font-semibold ml-3 hover:bg-cyan-300 bg-none rounded truncate p-[0.3rem]"
+                        onClick={() => {
+                          handleChangeCategory(categoria);
+                          setSearchTerm('');
+                        }}
+                        key={index + 1}
+                      >
+                        {categoria}
+                      </button>
+                    ))}
                   </div>
-                  {/* {BUSCADOR} */}
-                  <div className="flex-shrink-0 w-1/4">
+
+                  {/* Mostrar el buscador */}
+                  <div className="flex-shrink-0 w-1/4 ml-auto">
                     <button className="text-sm font-semibold bg-white shadow rounded-3xl truncate w-full h-9 flex">
                       <div className="rounded-full bg-cyan-500 text-white w-6 left-2 relative mt-2">
                         <FontAwesomeIcon icon={faMagnifyingGlass} />
@@ -659,6 +750,7 @@ function App() {
                       {isDesktop ? (
                         <input
                           type="text"
+                          ref={inputRef}
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                           className="w-full mr-2 text-left bg-none px-2 focus:outline-none text-gray-800 mt-2 ml-1 truncate"
@@ -725,8 +817,16 @@ function App() {
                   <div className="flex flex-col overflow-auto">
                     <div className="overflow-y-auto">
                       <div className="w-full bg-cyan-400 h-12 p-2 flex items-center overflow-hidden sticky top-0 text-white">
-                        <div className="flex w-full items-center overflow-x-auto">
-                          <FontAwesomeIcon icon={faHouse} size="2x" onClick={() => handleChangeCategory('')} className="cursor-pointer" />
+                        <div className="flex w-full items-center custom-scrollbar overflow-auto">
+                          <FontAwesomeIcon
+                            icon={faHouse}
+                            size="2x"
+                            onClick={() => {
+                              handleChangeCategory('');
+                              setSearchTerm('');
+                            }}
+                            className="cursor-pointer"
+                          />
 
                           <div className="flex items-center">
                             <div className="flex whitespace-nowrap overflow-x-auto">
@@ -873,7 +973,6 @@ function App() {
                             className="text-gray text-lg w-full h-full py-3 focus:outline-none bg-yellow-300 hover:bg-yellow-400"
                             onClick={() => {
                               if (productsInOrder?.length && !orderSelected) {
-                                console.log('se crea uno nuevo', orderSelected);
                                 handleCreateAndCleanOrder();
                               } else {
                                 updateOrderSelected(false); //TODO: cuadno es uan orden creda anterioirmente
@@ -1019,7 +1118,9 @@ function App() {
                               return;
                             }
                             setProductsInOrderByDbHandler(orderSelected?.products);
-                            setIsChecked(orderSelected?.isDelivery)
+                            setIsChecked(orderSelected?.isDelivery);
+                            setAddress(orderSelected?.addressClient);
+                            setPhoneClient(orderSelected?.phoneClient);
                             setIsEditOrder(true);
                             setPageView('sales');
                           }}
@@ -1087,8 +1188,23 @@ function App() {
                     : 'text-gray-500'
                 }`}
               >
-                ${new Intl.NumberFormat().format(calculateTotal() || orderSelected?.total)}
+                $
+                {isChecked
+                  ? new Intl.NumberFormat().format((calculateTotal() || orderSelected?.total) + 1500)
+                  : new Intl.NumberFormat().format(calculateTotal() || orderSelected?.total)}
               </span>
+            </div>
+            <div className="items-left justify-left flex cursor-pointer mt-2">
+              <input
+                type="checkbox"
+                id="exampleCheckbox"
+                className="form-checkbox h-5 w-6 text-blue-500 focus:ring-blue-300 border-gray-300 rounded-md"
+                checked={isChecked}
+                onChange={handleCheckboxChange}
+              />
+              <label htmlFor="exampleCheckbox" className="ml-2 text-gray-700 font-medium cursor-pointer">
+                Es un Domicilio?
+              </label>
             </div>
             {/* <h2 className="text-lg font-bold mb-2">Realizar Pago</h2> */}
             <div className="w-full overflow-auto p-2">
@@ -1098,8 +1214,8 @@ function App() {
                   <span className="text-blue-500">
                     $
                     {new Intl.NumberFormat().format(
-                      Number(valueInPayment) > (calculateTotal() || orderSelected?.total)
-                        ? Number(valueInPayment) - (calculateTotal() || orderSelected?.total)
+                      Number(valueInPayment) > (isChecked ? calculateTotal() + 1500 : calculateTotal() || orderSelected?.total)
+                        ? Number(valueInPayment) - (isChecked ? calculateTotal() + 1500 : calculateTotal() || orderSelected?.total)
                         : 0,
                     )}
                   </span>
@@ -1164,22 +1280,35 @@ function App() {
         </Modal>
 
         {/* {REcibo MOdal} */}
-        <Modal isOpen={modalCockIsOpen} onClose={() => setModalCockIsOpen(!modalCockIsOpen)}>
-          <div className="w-96 bg-white overflow-x-auto z-10 text-gray-500 h-auto max-h-[80vh]" id="print-area">
+        <Modal
+          isOpen={modalCockIsOpen}
+          onClose={() => {
+            setModalCockIsOpen(!modalCockIsOpen);
+            setIsModalOpen(false);
+          }}
+        >
+          <div className="w-96 bg-white overflow-x-auto z-10 text-gray-500 h-auto max-h-[80vh]">
             <div className="text-left w-full text-sm p-4 overflow-auto">
               <div className="text-center">
                 <h2 className="text-xl font-semibold">Mandar a Cocina</h2>
               </div>
-              <div className="flex mt-4 text-xs">
-                <div className="flex-grow">
+              <div className="flex mt-4 text-xs"></div>
+              <div className="flex justify-center text-center flex-col">
+                <div className="text-md">{new Date().toLocaleString(undefined, { hour12: true })}</div>
+                <div className=" text-xs">
+                  Dirección: <strong>{address.toUpperCase() || 'Sin Especificar'}</strong>
+                </div>
+                <div className=" text-xs mb-2">
+                  Celular: <strong>{phoneClient || 'Sin Especificar'}</strong>
+                </div>
+                <hr className="my-2" />
+              </div>
+              {/* <div className="flex-grow">
                   No. de items:{' '}
                   {isEditOrder
                     ? productsInOrder.filter((producto) => producto.quantity !== producto.initialQuantity).length
                     : productsInOrder.length}
-                </div>
-                <div className="text-md">{new Date().toLocaleString(undefined, { hour12: true })}</div>
-              </div>
-              <hr className="my-2" />
+                </div> */}
               <div>
                 <table className="w-full text-xs">
                   <thead>
@@ -1200,8 +1329,11 @@ function App() {
                                 <span>{item.name}</span>
                                 <br />
                                 {Object.values(item?.notes || []).map((note: any, index) => (
-                                <small> <b>{index + 1}:</b> {note.note}, </small>
-                              ))}
+                                  <small>
+                                    {' '}
+                                    <b>{index + 1}:</b> {note.note},{' '}
+                                  </small>
+                                ))}
                               </td>
                               <td className="py-2 text-center">
                                 {item?.initialQuantity ? item.quantity - item?.initialQuantity : item.quantity}
@@ -1215,7 +1347,10 @@ function App() {
                               <span>{item.name}</span>
                               <br />
                               {Object.values(item?.notes || []).map((note: any, index) => (
-                                <small> <b>{index + 1}:</b> {note.note}, </small>
+                                <small>
+                                  {' '}
+                                  <b>{index + 1}:</b> {note.note},{' '}
+                                </small>
                               ))}
                             </td>
                             <td className="py-2 text-center">{item.quantity}</td>
@@ -1226,8 +1361,16 @@ function App() {
               </div>
               <hr className="my-2" />
               <div className="w-full justify-end flex">
-                <span className="font-bold text-right">
-                  TOTAL $
+                <span className="font-semibold text-right">SubTotal: ${new Intl.NumberFormat().format(calculateTotal())}</span>
+              </div>
+              {isChecked && (
+                <div className="w-full justify-end flex">
+                  <span className="font-semibold text-right">Domicilio: ${new Intl.NumberFormat().format(1500)}</span>
+                </div>
+              )}
+              <div className="w-full justify-end flex">
+                <span className="font-bold text-right text-[0.8rem]">
+                  TOTAL: $
                   {isChecked ? new Intl.NumberFormat().format(calculateTotal() + 1500) : new Intl.NumberFormat().format(calculateTotal())}
                 </span>
               </div>
@@ -1274,10 +1417,7 @@ function App() {
                   const haveItems = productsInOrder.length;
                   if (haveItemsByDb || orderSelected?.isPrint || haveItems) {
                     printAndProceed();
-                    setPhoneClient('');
-                    setAddress('');
                   }
-                  setIsChecked(false);
                 }}
               >
                 IMPRIMIR
@@ -1290,6 +1430,8 @@ function App() {
                     setPhoneClient('');
                     setAddress('');
                     setIsChecked(false);
+                    setIsModalOpen(false);
+                    setIsEditOrder(false);
                   }}
                 >
                   SOLO GUARDAR CAMBIOS
@@ -1342,8 +1484,166 @@ function App() {
         </Modal>
 
         {/* {end No print area} */}
+      </div>
 
-        <div id="print-area" className="print-area"></div>
+      <div id="invoices">
+        {/* {Ticket De Cocina} */}
+        {modalCockIsOpen && (
+          <div className="text-left w-full text-[0.6rem] p-4 overflow-auto">
+            <div className="text-center">
+              <h2 className="text-lg font-semibold">Cocina</h2>
+            </div>
+            <div className="flex mt-2">
+              {/* <div className="flex-grow">
+              No. de items:{' '}
+              {isEditOrder
+                ? productsInOrder.filter((producto) => producto.quantity !== producto.initialQuantity).length
+                : productsInOrder.length}
+            </div> */}
+            </div>
+            <div className="flex justify-center text-center flex-col">
+              <div className="text-md">{new Date().toLocaleString(undefined, { hour12: true })}</div>
+              <div className="text-[0.6rem]">
+                Direccion: <strong>{address.toUpperCase() || 'Sin Especificar'}</strong>
+              </div>
+              <div className="text-[0.6rem] mb-2">
+                Celular: <strong>{phoneClient || 'Sin Especificar'}</strong>
+              </div>
+            </div>
+            <div className="w-full" style={{ borderBottom: '1px dashed black' }}></div>
+            <div>
+              <table className="w-full text-[0.6rem]">
+                <thead>
+                  <tr>
+                    <th className="py-1 w-1/12 text-center">#</th>
+                    <th className="py-1 text-left">Item</th>
+                    <th className="py-1 w-2/12 text-center">Cant</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isEditOrder && orderSelected?.isPrint
+                    ? productsInOrder
+                        .filter((producto) => producto.quantity !== producto.initialQuantity)
+                        .map((item: any, index: any) => (
+                          <tr key={index}>
+                            <td className="py-1 text-center">{index + 1}</td>
+                            <td className="py-1 text-left">
+                              <span>{item.name}</span>
+                              <br />
+                              {Object.values(item?.notes || []).map((note: any, index) => (
+                                <small>
+                                  {' '}
+                                  <b>{index + 1}:</b> {note.note}, <br />1
+                                </small>
+                              ))}
+                            </td>
+                            <td className="py-1 text-center">
+                              {item?.initialQuantity ? item.quantity - item?.initialQuantity : item.quantity}
+                            </td>
+                          </tr>
+                        ))
+                    : productsInOrder.map((item: any, index: any) => (
+                        <tr key={index}>
+                          <td className="py-1 text-center">{index + 1}</td>
+                          <td className="py-1 text-left">
+                            <span>{item.name}</span>
+                            <br />
+                            {Object.values(item?.notes || []).map((note: any, index) => (
+                              <small>
+                                {' '}
+                                <b>{index + 1}:</b> {note.note}, <br />
+                              </small>
+                            ))}
+                          </td>
+                          <td className="py-1 text-center">{item.quantity}</td>
+                        </tr>
+                      ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="w-full my-2" style={{ borderBottom: '1px dashed black' }}></div>
+            <div className="w-full justify-end flex">
+              <span className="font-semibold text-right">SubTotal: ${new Intl.NumberFormat().format(calculateTotal())}</span>
+            </div>
+            {isChecked && (
+              <div className="w-full justify-end flex">
+                <span className="font-semibold text-right">Domicilio: ${new Intl.NumberFormat().format(1500)}</span>
+              </div>
+            )}
+            <div className="w-full justify-end flex">
+              <span className="font-bold text-right text-[0.8rem]">
+                TOTAL: $
+                {isChecked ? new Intl.NumberFormat().format(calculateTotal() + 1500) : new Intl.NumberFormat().format(calculateTotal())}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {modalIsOpen && (
+          <div className="text-center w-full text-[0.6rem] p-4 overflow-auto justify-center">
+            <div className="flex justify-center text-center flex-col">
+              <div className=" text-[0.7rem] font-semibold">
+                HELADERIA LA PISTA <br></br> DEL SABOR
+              </div>
+              <div className="text-md">Fecha: {new Date().toLocaleString(undefined, { hour12: true })}</div>
+              <div className="text-md">Paola Andrea Galvis</div>
+              <div className="text-md">NIT: 66873502-2</div>
+              <div className="text-md">REGIMEN SIMPLE</div>
+            </div>
+            <div className="w-full" style={{ borderBottom: '1px dashed black' }}></div>
+            <div>
+              <table className="w-full text-[0.6rem]">
+                <thead>
+                  <tr>
+                    <th className="py-1 w-1/12 text-center">#</th>
+                    <th className="py-1 text-left">Item</th>
+                    <th className="py-1 w-2/12 text-center">Cant</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isEditOrder && orderSelected?.isPrint
+                    ? productsInOrder
+                        .filter((producto) => producto.quantity !== producto.initialQuantity)
+                        .map((item: any, index: any) => (
+                          <tr key={index}>
+                            <td className="py-1 text-center">{index + 1}</td>
+                            <td className="py-1 text-left">
+                              <span>{item.name}</span>
+                            </td>
+                            <td className="py-1 text-center">
+                              {item?.initialQuantity ? item.quantity - item?.initialQuantity : item.quantity}
+                            </td>
+                          </tr>
+                        ))
+                    : productsInOrder.map((item: any, index: any) => (
+                        <tr key={index}>
+                          <td className="py-1 text-center">{index + 1}</td>
+                          <td className="py-1 text-left">
+                            <span>{item.name}</span>
+                          </td>
+                          <td className="py-1 text-center">{item.quantity}</td>
+                        </tr>
+                      ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="w-full my-2" style={{ borderBottom: '1px dashed black' }}></div>
+            <div className="w-full justify-end flex">
+              <span className="font-semibold text-right">SubTotal: ${new Intl.NumberFormat().format(calculateTotal())}</span>
+            </div>
+            {isChecked && (
+              <div className="w-full justify-end flex">
+                <span className="font-semibold text-right">Domicilio: ${new Intl.NumberFormat().format(1500)}</span>
+              </div>
+            )}
+            <div className="w-full justify-end flex">
+              <span className="font-bold text-right text-[0.8rem]">
+                TOTAL: $
+                {isChecked ? new Intl.NumberFormat().format(calculateTotal() + 1500) : new Intl.NumberFormat().format(calculateTotal())}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
