@@ -1266,10 +1266,12 @@ function App() {
                   if (orderSelected) {
                     updateOrderSelected();
                     setModalIsOpen(false);
+                    setIsModalOpen(false)
                     return;
                   }
                   handleCreateAndCleanOrder(true);
                   setModalIsOpen(false);
+                  setIsModalOpen(false)
                   setIsChecked(false);
                 }}
               >
