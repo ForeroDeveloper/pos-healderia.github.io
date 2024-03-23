@@ -449,12 +449,12 @@ function App() {
         if (orderSelected) {
           updateOrderSelected();
           setModalIsOpen(false);
-          setIsModalOpen(false)
+          setIsModalOpen(false);
           return;
         }
         handleCreateAndCleanOrder(true);
         setModalIsOpen(false);
-        setIsModalOpen(false)
+        setIsModalOpen(false);
         return;
       }
       openModal();
@@ -520,7 +520,10 @@ function App() {
           <div className="w-full bg-cyan-800 h-11 py-2 pr-1 flex justify-end">
             <button
               className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md mr-3"
-              onClick={() => setOpenModalFlavors(true)}
+              onClick={() => {
+                setOpenModalFlavors(true);
+                setIsModalOpen(true);
+              }}
             >
               Sabores de Helado <FontAwesomeIcon icon={faIceCream} />
             </button>
@@ -583,7 +586,10 @@ function App() {
           <div className="w-full bg-cyan-800 h-11 py-2 pr-1 flex justify-end">
             <button
               className="text-white text-sm font-semibold w-auto h-full pl-2 pr-2 bg-orange-400 rounded-md mr-3"
-              onClick={() => setOpenModalFlavors(true)}
+              onClick={() => {
+                setOpenModalFlavors(true);
+                setIsModalOpen(true);
+              }}
             >
               Sabores <FontAwesomeIcon icon={faIceCream} />
             </button>
@@ -1266,12 +1272,12 @@ function App() {
                   if (orderSelected) {
                     updateOrderSelected();
                     setModalIsOpen(false);
-                    setIsModalOpen(false)
+                    setIsModalOpen(false);
                     return;
                   }
                   handleCreateAndCleanOrder(true);
                   setModalIsOpen(false);
-                  setIsModalOpen(false)
+                  setIsModalOpen(false);
                   setIsChecked(false);
                 }}
               >
@@ -1444,7 +1450,13 @@ function App() {
         </Modal>
 
         {/* {Sabores de Helado Modal} */}
-        <Modal isOpen={openModalFlavors} onClose={() => setOpenModalFlavors(!openModalFlavors)}>
+        <Modal
+          isOpen={openModalFlavors}
+          onClose={() => {
+            setOpenModalFlavors(!openModalFlavors);
+            setIsModalOpen(false);
+          }}
+        >
           <div className="w-96 bg-white overflow-x-auto z-10 text-gray-500 h-auto max-h-[80vh]" id="print-area">
             <div className="bg-white p-6 rounded-md shadow-md w-96">
               <h2 className="text-2xl font-bold mb-4">Sabores Disponibles</h2>
