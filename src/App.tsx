@@ -15,6 +15,7 @@ import {
   faMagnifyingGlass,
   faMoneyBill,
   faTrash,
+  faCopy,
 } from '@fortawesome/free-solid-svg-icons';
 import Modal from './Components/Modal/Modal';
 import TableOrders from './Components/TableOrders/TableOrders';
@@ -28,6 +29,7 @@ import { ref, set, push, onValue, remove, update } from 'firebase/database';
 import { db, realtimeDb } from '../src/config/firestore.js';
 import ImageComponent from './Components/ImageComponent/ImageComponent.js';
 import { isMobile, isDesktop } from 'react-device-detect';
+import { NumericFormat } from 'react-number-format';
 
 declare global {
   interface Window {
@@ -81,6 +83,7 @@ function App() {
   const [valueInPayment, setValueInPayment] = useState<string>('');
   const [address, setAddress] = useState<string>('');
   const [phoneClient, setPhoneClient] = useState<string>('');
+  const [paymentTotalClient, setPaymentTotalClient] = useState<number>(0);
   // const [valueInProduct, setValueInProduct] = useState<string>("");
   const [showKeyboard, setShowKeyboard] = useState(false);
   const [modalIsOpen, setModalIsOpen] = useState(false);
@@ -310,6 +313,9 @@ function App() {
   };
 
   const handleSave = () => {
+    if (!inputFlavors.length) {
+      return;
+    }
     try {
       const flavorRef = ref(realtimeDb, `flavors/`);
       const newFlavorRef = push(flavorRef);
@@ -512,6 +518,11 @@ function App() {
   //   };
   // }, []);
 
+  const handlePaymentClient = (e: any) => {
+    const inputValue = e.target.value;
+    setPaymentTotalClient(parseFloat(inputValue.replace(/[^0-9.-]+/g,"")));
+  };
+
   return (
     <>
       <div className="h-screen">
@@ -621,7 +632,7 @@ function App() {
                 <div className="flex-1 flex flex-col overflow-auto">
                   {productsInOrder.length ? (
                     <div className="flex-1 w-full overflow-auto border-t-2">
-                      <Cart cart={productsInOrder} productSelected={productSelected} />
+                      <Cart cart={productsInOrder} productSelected={productSelected} setProduct={setProductSelected} />
                     </div>
                   ) : (
                     <div className="flex-1 w-full p-4 opacity-25 flex flex-col flex-wrap content-center justify-center">
@@ -804,6 +815,65 @@ function App() {
                     </div>
                   );
                 })}
+              </div>
+
+              {/* {Seccion de Mesas} */}
+              <div className="w-full bg-cyan-400 h-12 p-2 flex items-center overflow-hidden fixed bottom-0 z-50">
+                <div className="flex w-full items-center">
+                  <FontAwesomeIcon
+                    icon={faHouse}
+                    size="2x"
+                    onClick={() => {
+                      handleChangeCategory('');
+                      setSearchTerm('');
+                    }}
+                    className="cursor-pointer"
+                  />
+
+                  <div className="flex w-full items-center overflow-x-auto">
+                    {/* Mostrar las categorías */}
+                    {categoriesList.map((categoria, index) => (
+                      <button
+                        className="text-sm font-semibold ml-3 hover:bg-cyan-300 bg-none rounded truncate p-[0.3rem]"
+                        onClick={() => {
+                          handleChangeCategory(categoria);
+                          setSearchTerm('');
+                        }}
+                        key={index + 1}
+                      >
+                        {categoria}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Mostrar el buscador */}
+                  <div className="flex-shrink-0 w-1/4 ml-auto">
+                    <button className="text-sm font-semibold bg-white shadow rounded-3xl truncate w-full h-9 flex">
+                      <div className="rounded-full bg-cyan-500 text-white w-6 left-2 relative mt-2">
+                        <FontAwesomeIcon icon={faMagnifyingGlass} />
+                      </div>
+                      {isDesktop ? (
+                        <input
+                          type="text"
+                          ref={inputRef}
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full mr-2 text-left bg-none px-2 focus:outline-none text-gray-800 mt-2 ml-1 truncate"
+                          placeholder="Buscar producto..."
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          value={searchTerm}
+                          readOnly
+                          onClick={() => setShowKeyboard(!showKeyboard)}
+                          className="w-full mr-2 text-left bg-none px-2 focus:outline-none text-gray-800 mt-2 ml-1 truncate"
+                          placeholder="Buscar producto..."
+                        />
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {showKeyboard && <OnScreenKeyboard onKeyPress={handleKeyPress} />}
@@ -1082,7 +1152,12 @@ function App() {
               <div className="flex-1 flex flex-col overflow-auto">
                 {orderSelected ? (
                   <div className="flex-1 w-full overflow-auto">
-                    <Cart cart={orderSelected?.products || []} isCreated={true} />
+                    <Cart
+                      cart={orderSelected?.products || []}
+                      isCreated={true}
+                      setProduct={setProductSelected}
+                      productSelected={productSelected}
+                    />
                   </div>
                 ) : (
                   <div className="flex-1 w-full p-4 opacity-25 flex flex-col flex-wrap content-center justify-center">
@@ -1258,12 +1333,31 @@ function App() {
                 </button>
               ))}
             </div>
-            <div className="grid grid-cols-2 mt-3 gap-1">
+            <div className="grid grid-cols-3 mt-3 gap-1">
               <button
                 className="text-white text-lg w-full h-[65px] py-3 focus:outline-none bg-red-500 hover:bg-red-600 rounded-md"
                 onClick={closeModal}
               >
                 Cerrar
+              </button>
+              <button
+                className="text-white text-lg w-full h-[65px] py-3 focus:outline-none bg-blue-400 hover:bg-blue-500 rounded-md"
+                onClick={() => {
+                  setIsChecked(false);
+                  if (orderSelected) {
+                    updateOrderSelected();
+                    setModalIsOpen(false);
+                    setIsModalOpen(false);
+                    return;
+                  }
+                  handleCreateAndCleanOrder(true);
+                  setModalIsOpen(false);
+                  setIsModalOpen(false);
+                  setIsChecked(false);
+                  window.print();
+                }}
+              >
+                Confirmar e imprimir
               </button>
               <button
                 className="text-white text-lg w-full h-[65px] py-3 focus:outline-none bg-green-400 hover:bg-green-500 rounded-md"
@@ -1295,7 +1389,7 @@ function App() {
             setIsModalOpen(false);
           }}
         >
-          <div className="w-96 bg-white overflow-x-auto z-10 text-gray-500 h-auto max-h-[80vh]">
+          <div className="w-[40vw] bg-white overflow-x-auto z-10 text-gray-500 h-auto max-h-[90vh]">
             <div className="text-left w-full text-sm p-4 overflow-auto">
               <div className="text-center">
                 <h2 className="text-xl font-semibold">Mandar a Cocina</h2>
@@ -1382,9 +1476,15 @@ function App() {
                   {isChecked ? new Intl.NumberFormat().format(calculateTotal() + 1500) : new Intl.NumberFormat().format(calculateTotal())}
                 </span>
               </div>
+              <div className="w-full justify-end flex">
+                <span className="font-bold text-right text-[0.8rem]">
+                  Devuelta: $
+                  {isChecked ? new Intl.NumberFormat().format(paymentTotalClient - (calculateTotal() + 1500)) : new Intl.NumberFormat().format(paymentTotalClient - calculateTotal())}
+                </span>
+              </div>
             </div>
             <div className="p-4 w-full hide-print">
-              <div className="items-center mb-4 ml-2 justify-center flex cursor-pointer">
+              <div className="items-center mb-4 ml-2 justify-left flex cursor-pointer mt-[-70px]">
                 <input
                   type="checkbox"
                   id="exampleCheckbox"
@@ -1413,13 +1513,23 @@ function App() {
                     value={phoneClient}
                     onChange={(e) => setPhoneClient(e.target.value)}
                     autoComplete="off"
-                    className="w-full h-10 mr-2 text-left bg-none px-2 focus:outline-gray-800 text-gray-800 mt-2 ml-1 border border-gray-500 rounded-md"
+                    className="w-full h-10 mr-2 text-left bg-none px-2 focus:outline-gray-800 text-gray-800 mt-2 ml-1 border border-gray-500 rounded-md mb-2"
                     placeholder="Para llamar al cliente..."
+                  />
+                  <span className="text-sm font-bold justify-left">Con Cuanto Paga:</span>
+                  <NumericFormat
+                    value={String(paymentTotalClient)}
+                    className="py-1 px-2 border rounded mb-2 w-full border-green-400 ml-1 mt-2"
+                    onChange={handlePaymentClient}
+                    // onKeyDown={handleKeyPress}
+                    allowLeadingZeros
+                    prefix="$ "
+                    thousandSeparator=","
                   />
                 </div>
               )}
               <button
-                className="bg-cyan-500 text-white text-lg px-4 py-3 rounded-2xl w-full focus:outline-none"
+                className="bg-cyan-500 text-white text-lg px-4 py-3 rounded-2xl w-full focus:outline-none mt-10"
                 onClick={() => {
                   const haveItemsByDb = productsInOrder.filter((producto) => producto.quantity !== producto.initialQuantity).length;
                   const haveItems = productsInOrder.length;
@@ -1457,8 +1567,8 @@ function App() {
             setIsModalOpen(false);
           }}
         >
-          <div className="w-96 bg-white overflow-x-auto z-10 text-gray-500 h-auto max-h-[80vh]" id="print-area">
-            <div className="bg-white p-6 rounded-md shadow-md w-96">
+          <div className="w-100 bg-white overflow-y-auto overflow-x-hidden z-10 text-gray-500 h-auto max-h-[80vh]" id="print-area">
+            <div className="bg-white p-6 rounded-md shadow-md w-100">
               <h2 className="text-2xl font-bold mb-4">Sabores Disponibles</h2>
               <div className="flex justify-between h-10 mb-5">
                 <input
@@ -1470,6 +1580,23 @@ function App() {
                 />
                 <button onClick={handleSave} className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 ml-2">
                   Agregar
+                </button>
+                <button className="bg-green-400 text-white px-4 py-2 rounded-md hover:bg-blue-600 ml-2">
+                  <FontAwesomeIcon
+                    icon={faCopy}
+                    size="1x"
+                    onClick={() => {
+                      navigator.clipboard
+                        .writeText(flavorsList.map((flavor) => flavor.name).join(', '))
+                        .then(() => {
+                          console.log('Texto copiado al portapapeles', flavorsList);
+                        })
+                        .catch((err) => {
+                          console.error('Error al copiar al portapapeles:', err);
+                        });
+                    }}
+                    className="cursor-pointer"
+                  />
                 </button>
               </div>
 
@@ -1584,6 +1711,14 @@ function App() {
                 <span className="font-semibold text-right">Domicilio: ${new Intl.NumberFormat().format(1500)}</span>
               </div>
             )}
+            {isChecked && (
+               <div className="w-full justify-end flex">
+               <span className="font-bold text-right text-[0.7rem]">
+                 Devuelta: $
+                 {isChecked ? new Intl.NumberFormat().format(paymentTotalClient - (calculateTotal() + 1500)) : new Intl.NumberFormat().format(paymentTotalClient - calculateTotal())}
+               </span>
+             </div>
+            )}
             <div className="w-full justify-end flex">
               <span className="font-bold text-right text-[0.8rem]">
                 TOTAL: $
@@ -1650,6 +1785,7 @@ function App() {
                 <span className="font-semibold text-right">Domicilio: ${new Intl.NumberFormat().format(1500)}</span>
               </div>
             )}
+            
             <div className="w-full justify-end flex">
               <span className="font-bold text-right text-[0.8rem]">
                 TOTAL: $

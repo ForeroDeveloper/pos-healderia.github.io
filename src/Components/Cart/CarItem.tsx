@@ -76,7 +76,13 @@ const CarItem = ({ item, productSelected, isCreated, setProduct }: any) => {
   };
 
   return (
-    <div key={item.id} onClick={() => setProduct(item)}>
+    <div
+      key={item.id}
+      onClick={() => {
+        setProduct(item);
+      }}
+      className='cursor-pointer'
+    >
       <div
         key={item.id}
         ref={productSelected?.id === item?.id ? selectedProductRef : null}
@@ -127,10 +133,10 @@ const CarItem = ({ item, productSelected, isCreated, setProduct }: any) => {
           onClick={() => {
             setOpenModal(!openModal);
             setIsModalOpen(false);
-            console.log('se cierra')
+            console.log('se cierra');
           }}
         ></div>
-        <div className="bg-white p-8 rounded shadow-lg z-10 w-[400px]">
+        <div className="bg-white p-8 rounded shadow-lg z-10 w-[70vw] max-h-[80vh] overflow-y-auto">
           <h2 className="text-lg font-semibold mb-0">Agregar Nota</h2>
           <span className="text-sm font-normal mb-2 flex justify-center">
             Producto: <p className="font-semibold ml-1">{item?.name}</p>
@@ -160,7 +166,7 @@ const CarItem = ({ item, productSelected, isCreated, setProduct }: any) => {
                   {flavorsList.map((flavor) => (
                     <span
                       key={flavor.id}
-                      className="inline-block bg-blue-500 text-white px-2 py-0 rounded-full cursor-pointer hover:bg-blue-600 text-sm mr-1 mb-3"
+                      className="inline-block bg-blue-500 text-white px-2 py-0 rounded-full cursor-pointer hover:bg-blue-600 text-md mr-1 mb-3"
                       onClick={() => {
                         handleNoteChange(index, noteTexts[index] + flavor?.name + ', ');
                       }}
